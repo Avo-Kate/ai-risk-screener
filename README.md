@@ -5,9 +5,9 @@ LLM agent analyzes it against the major regulatory frameworks and returns a
 structured, saved assessment with risks and mitigations.
 
 - **Frameworks checked:** EU AI Act, NIST AI RMF, GDPR, ISO/IEC 42001
-- **Backend:** Python · FastAPI · SQLAlchemy (SQLite)
+- **Backend:** Python · FastAPI · SQLAlchemy (PostgreSQL) · Alembic migrations
 - **Frontend:** React (Vite) · plain CSS
-- **LLM:** Anthropic API (`claude-sonnet-4-20250514` by default) via the official `anthropic` Python SDK
+- **LLM:** Anthropic API (`claude-sonnet-5` by default) via the official `anthropic` Python SDK
 
 The agent is forced to return JSON-only output matching a fixed schema. The
 backend parses and validates it, **retries once** on failure, and otherwise
@@ -26,9 +26,11 @@ ai-risk-screener/
 │   │   ├── agent.py       # System prompt, Anthropic call, parse/validate/retry
 │   │   ├── schemas.py     # Pydantic: input + output schema (validation)
 │   │   ├── models.py      # SQLAlchemy ORM model
-│   │   ├── database.py    # Engine, session, Base
-│   │   ├── config.py      # Env-based settings (reads ANTHROPIC_API_KEY)
-│   │   └── seed.py        # Seeds one example assessment
+│   │   ├── database.py    # Engine, session, Base (schema owned by Alembic)
+│   │   ├── config.py      # Env-based settings (reads ANTHROPIC_API_KEY, DATABASE_URL)
+│   │   └── seed.py        # Seeds one example assessment (idempotent)
+│   ├── alembic/           # Alembic migration environment + versions/
+│   ├── alembic.ini        # Alembic config (URL injected from DATABASE_URL)
 │   ├── requirements.txt
 │   └── .env.example
 ├── frontend/
@@ -50,6 +52,8 @@ ai-risk-screener/
 ## Prerequisites
 
 - **Python 3.10+**
+- **PostgreSQL 14+** — a local server for development, or a managed Postgres
+  (Neon, Supabase, etc.) in production
 - **Node.js 18+** and npm (for the frontend)
 - An **Anthropic API key** — https://console.anthropic.com/
 
@@ -69,9 +73,10 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Configure your API key
+# Configure your key and database
 cp .env.example .env
 # then edit .env and set ANTHROPIC_API_KEY=sk-ant-...
+# DATABASE_URL is optional; it defaults to a local Postgres (see below).
 ```
 
 Set the key (the app reads it from the environment; it is never hardcoded). The
@@ -81,6 +86,15 @@ Set the key (the app reads it from the environment; it is never hardcoded). The
 export ANTHROPIC_API_KEY=sk-ant-your-key-here
 ```
 
+**Create the database and run migrations** (see
+[Database & migrations](#database--migrations) for the local Postgres setup),
+then apply the schema:
+
+```bash
+# from backend/, with the venv active
+alembic upgrade head
+```
+
 Run the API server:
 
 ```bash
@@ -88,15 +102,15 @@ Run the API server:
 uvicorn app.main:app --reload --port 8000
 ```
 
-On first start the app creates the SQLite database (`backend/ai_risk.db`) and
-seeds **one example assessment** so you can see the result and list views
-immediately — no API call required.
+The schema is owned by Alembic migrations — the app no longer creates tables on
+startup, so run `alembic upgrade head` before the first launch. On startup the
+app seeds **one example assessment** so you can see the result and list views
+immediately — no API call required. The seed is idempotent: it inserts the
+example only if it is not already present, so restarts never duplicate it.
 
 - Health check: http://localhost:8000/api/health
   (`api_key_configured` tells you whether the key was found)
 - Interactive API docs: http://localhost:8000/docs
-
-> **Re-seed manually (optional):** `python -m app.seed` (from `backend/`, venv active).
 
 ---
 
@@ -114,6 +128,55 @@ Open the URL Vite prints (default **http://localhost:5173**).
 
 The dev server proxies `/api` to the backend on port 8000, so no extra
 configuration is needed. Run the backend first.
+
+---
+
+## Database & migrations
+
+The app uses **PostgreSQL**, with the schema owned by **Alembic** migrations.
+The connection string comes from `DATABASE_URL` (a SQLAlchemy + `psycopg` v3
+URL). It is never hardcoded and never committed — set it in `backend/.env` for
+local development, or in the host's environment settings in production.
+
+### Local Postgres (development)
+
+If `DATABASE_URL` is unset, the app defaults to:
+
+```
+postgresql+psycopg://ai_risk:ai_risk@localhost:5432/ai_risk
+```
+
+Create a matching role and database once (example using a local Postgres where
+your OS user is a superuser — e.g. Homebrew's `postgresql@16`):
+
+```bash
+# create the login role and an owned database
+psql -d postgres -c "CREATE ROLE ai_risk LOGIN PASSWORD 'ai_risk';"
+createdb -O ai_risk ai_risk
+```
+
+To point at a different database (managed Postgres, a different local name),
+set `DATABASE_URL` in `backend/.env` instead — see `.env.example`.
+
+### Running migrations
+
+All commands run from `backend/` with the venv active:
+
+```bash
+alembic upgrade head                         # apply all migrations (create/upgrade schema)
+alembic current                              # show the applied revision
+alembic downgrade -1                          # roll back the last migration
+alembic revision --autogenerate -m "message"  # create a new migration after changing models.py
+```
+
+`alembic upgrade head` is required before the **first** launch, and any time
+new migrations are added. After editing `app/models.py`, generate a new
+revision with `--autogenerate`, review the generated file in
+`alembic/versions/`, then `alembic upgrade head`.
+
+> **Re-seed manually (optional):** `python -m app.seed` (from `backend/`, venv
+> active). Requires the schema to already exist (`alembic upgrade head`). The
+> seed is idempotent — it will not create duplicates.
 
 ---
 
@@ -136,14 +199,15 @@ configuration is needed. Run the backend first.
 | Variable              | Required | Default                     | Purpose                                   |
 | --------------------- | -------- | --------------------------- | ----------------------------------------- |
 | `ANTHROPIC_API_KEY`   | **Yes**  | —                           | Your Anthropic API key                    |
-| `ANTHROPIC_MODEL`     | No       | `claude-sonnet-4-20250514`  | Model to use                              |
+| `ANTHROPIC_MODEL`     | No       | `claude-sonnet-5`           | Model to use                              |
 | `ANTHROPIC_MAX_TOKENS`| No       | `8000`                      | Max output tokens per assessment          |
-| `DATABASE_URL`        | No       | `sqlite:///backend/ai_risk.db` | SQLAlchemy database URL                |
+| `DATABASE_URL`        | No       | `postgresql+psycopg://ai_risk:ai_risk@localhost:5432/ai_risk` | Postgres URL (SQLAlchemy + psycopg v3) — see [Database & migrations](#database--migrations) |
 | `CORS_ORIGINS`        | No       | `http://localhost:5173,...` | Allowed frontend origins                  |
 
-> **Model note:** `claude-sonnet-4-20250514` is on a deprecation track (retires
-> mid-2026). To upgrade, set `ANTHROPIC_MODEL` to a current model such as
-> `claude-sonnet-4-6` or `claude-opus-4-8` — no code changes needed.
+> **Model note:** The default is `claude-sonnet-5`. For higher capability set
+> `ANTHROPIC_MODEL=claude-opus-4-8`; for lower cost, `claude-haiku-4-5` — no code
+> changes needed. (The original default, `claude-sonnet-4-20250514`, has reached
+> end-of-life and is no longer available.)
 
 ---
 

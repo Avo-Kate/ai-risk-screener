@@ -5,11 +5,14 @@ call. Safe to run repeatedly: it only inserts the example if no assessment with
 the same project name exists. Can be run standalone:
 
     python -m app.seed
+
+The schema must already exist (run `alembic upgrade head` first); this module
+never creates tables.
 """
 
 from datetime import datetime, timezone
 
-from .database import SessionLocal, init_db
+from .database import SessionLocal
 from .models import Assessment
 
 EXAMPLE_PROJECT_NAME = "Example: Automated CV Screening Tool"
@@ -199,7 +202,6 @@ def seed_example(db) -> bool:
 
 
 def main() -> None:
-    init_db()
     db = SessionLocal()
     try:
         inserted = seed_example(db)

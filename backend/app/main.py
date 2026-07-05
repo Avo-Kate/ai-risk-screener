@@ -14,7 +14,7 @@ from .agent import (
     UpstreamError,
     run_assessment,
 )
-from .database import get_db, init_db
+from .database import get_db
 from .models import Assessment
 from .schemas import (
     AssessmentInput,
@@ -30,8 +30,10 @@ logger = logging.getLogger("ai_risk")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create tables and ensure the example assessment is present on startup.
-    init_db()
+    # The schema is owned by Alembic migrations (run `alembic upgrade head`
+    # before starting the app), not created here. On startup we only ensure the
+    # example assessment is present. seed_example is idempotent, so this is safe
+    # to run against an already-seeded database.
     from .database import SessionLocal
 
     db = SessionLocal()
