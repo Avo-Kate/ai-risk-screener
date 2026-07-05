@@ -17,10 +17,12 @@ load_dotenv(BACKEND_DIR / ".env")
 
 # --- Anthropic / LLM settings -------------------------------------------------
 
-# The user explicitly requested claude-sonnet-4-20250514. It stays configurable
-# so you can move to a newer model (e.g. claude-sonnet-4-6, claude-opus-4-8)
-# without touching code.
-ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
+# Default to claude-sonnet-5, the current Sonnet-tier model — strong quality at a
+# moderate cost, a good fit for self-hosters. The previous default,
+# claude-sonnet-4-20250514, has reached end-of-life and now 404s. Override with
+# the ANTHROPIC_MODEL env var (e.g. claude-opus-4-8 for maximum capability, or
+# claude-haiku-4-5 for lower cost) without touching code.
+ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5")
 
 # Read at call time (not import time) so a missing key produces a clear runtime
 # error in the request path rather than crashing startup.
@@ -33,8 +35,17 @@ MAX_TOKENS = int(os.getenv("ANTHROPIC_MAX_TOKENS", "8000"))
 
 # --- Database -----------------------------------------------------------------
 
-# Default to a SQLite file inside backend/. Override with DATABASE_URL if needed.
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BACKEND_DIR / 'ai_risk.db'}")
+# Postgres is the target database. DATABASE_URL is read from the environment so
+# the same code runs against a local Postgres in development and a managed
+# Postgres (Neon, Supabase, etc.) in production. Never commit a real connection
+# string — set it in backend/.env locally or in the host's environment settings.
+#
+# The default points at a local Postgres for development. Use the SQLAlchemy +
+# psycopg (v3) driver URL form: postgresql+psycopg://user:pass@host:port/dbname
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+psycopg://ai_risk:ai_risk@localhost:5432/ai_risk",
+)
 
 # --- CORS ---------------------------------------------------------------------
 

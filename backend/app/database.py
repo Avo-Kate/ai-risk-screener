@@ -1,4 +1,9 @@
-"""SQLAlchemy engine, session factory, and declarative base."""
+"""SQLAlchemy engine, session factory, and declarative base.
+
+The schema is owned by Alembic migrations (see backend/alembic), not by
+``create_all``. Run ``alembic upgrade head`` to create/upgrade the schema before
+starting the app.
+"""
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
@@ -6,7 +11,7 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from .config import DATABASE_URL
 
 # check_same_thread=False is required for SQLite when used across FastAPI's
-# threadpool. It is ignored for other databases.
+# threadpool. It is ignored for other databases (e.g. Postgres).
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
@@ -24,11 +29,3 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
-def init_db() -> None:
-    """Create tables if they do not exist."""
-    # Import models so they are registered on Base.metadata before create_all.
-    from . import models  # noqa: F401
-
-    Base.metadata.create_all(bind=engine)
