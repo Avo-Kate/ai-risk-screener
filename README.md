@@ -7,7 +7,11 @@ structured, saved assessment with risks and mitigations.
 - **Frameworks checked:** EU AI Act, NIST AI RMF, GDPR, ISO/IEC 42001
 - **Backend:** Python · FastAPI · SQLAlchemy (PostgreSQL) · Alembic migrations
 - **Frontend:** React (Vite) · plain CSS
+- **Auth:** Supabase Auth — works with Supabase Cloud or self-hosted Supabase
 - **LLM:** Anthropic API (`claude-sonnet-5` by default) via the official `anthropic` Python SDK
+
+Assessments are **per-user and private**: every request must be authenticated,
+and you only ever see your own assessments.
 
 The agent is forced to return JSON-only output matching a fixed schema. The
 backend parses and validates it, **retries once** on failure, and otherwise
@@ -22,27 +26,30 @@ repeated assessments are far cheaper.
 ai-risk-screener/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py        # FastAPI app, routes, startup (init DB + seed)
+│   │   ├── main.py        # FastAPI app, routes (auth-protected), startup + seed
 │   │   ├── agent.py       # System prompt, Anthropic call, parse/validate/retry
+│   │   ├── auth.py        # Verify Supabase JWT, resolve/upsert the current user
 │   │   ├── schemas.py     # Pydantic: input + output schema (validation)
-│   │   ├── models.py      # SQLAlchemy ORM model
+│   │   ├── models.py      # SQLAlchemy ORM: User + Assessment (user_id owner)
 │   │   ├── database.py    # Engine, session, Base (schema owned by Alembic)
-│   │   ├── config.py      # Env-based settings (reads ANTHROPIC_API_KEY, DATABASE_URL)
-│   │   └── seed.py        # Seeds one example assessment (idempotent)
+│   │   ├── config.py      # Env-based settings (ANTHROPIC_API_KEY, DATABASE_URL, SUPABASE_JWT_SECRET)
+│   │   └── seed.py        # Seeds one example assessment owned by a demo user
 │   ├── alembic/           # Alembic migration environment + versions/
 │   ├── alembic.ini        # Alembic config (URL injected from DATABASE_URL)
 │   ├── requirements.txt
 │   └── .env.example
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx
-│   │   ├── api.js
+│   │   ├── App.jsx            # Auth-gated shell (login screen vs. app)
+│   │   ├── api.js             # fetch wrappers; attaches the Bearer token
+│   │   ├── supabaseClient.js  # Supabase Auth client (VITE_SUPABASE_* env)
 │   │   ├── constants.js
 │   │   ├── styles.css
-│   │   └── components/    # Form, Loading, Result, List
+│   │   └── components/    # Form, Loading, Result, List, Login
 │   ├── index.html
 │   ├── package.json
-│   └── vite.config.js
+│   ├── vite.config.js
+│   └── .env.example       # VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
 ├── README.md
 └── CLAUDE.md
 ```
@@ -56,6 +63,8 @@ ai-risk-screener/
   (Neon, Supabase, etc.) in production
 - **Node.js 18+** and npm (for the frontend)
 - An **Anthropic API key** — https://console.anthropic.com/
+- A **Supabase project** (free tier) or a **self-hosted Supabase** instance —
+  for authentication. See [Authentication](#authentication).
 
 ---
 
@@ -73,9 +82,11 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Configure your key and database
+# Configure your keys and database
 cp .env.example .env
-# then edit .env and set ANTHROPIC_API_KEY=sk-ant-...
+# then edit .env and set:
+#   ANTHROPIC_API_KEY=sk-ant-...       (required to run assessments)
+#   SUPABASE_URL=https://<ref>.supabase.co  (required for auth — see Authentication)
 # DATABASE_URL is optional; it defaults to a local Postgres (see below).
 ```
 
@@ -121,13 +132,62 @@ In a **second terminal**, from the project root:
 ```bash
 cd frontend
 npm install
+
+# Configure Supabase Auth for the browser (see Authentication below)
+cp .env.example .env
+# then edit .env and set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+
 npm run dev
 ```
 
-Open the URL Vite prints (default **http://localhost:5173**).
+Open the URL Vite prints (default **http://localhost:5173**). You'll be asked to
+sign in before you can run or view assessments.
 
 The dev server proxies `/api` to the backend on port 8000, so no extra
 configuration is needed. Run the backend first.
+
+---
+
+## Authentication
+
+The app uses **Supabase Auth** as its identity provider. Supabase (GoTrue) owns
+credentials and issues signed JWTs; the backend only **verifies** each token
+with the `PyJWT` library — no password hashing or hand-rolled verification. It
+supports both of Supabase's signing schemes, so it works against **Supabase
+Cloud** and a **self-hosted Supabase** instance:
+
+- **Asymmetric (recommended, and the default for current Supabase projects):**
+  set `SUPABASE_URL`. Tokens (ES256/RS256) are verified against the project's
+  public **JWKS** endpoint — no secret needed.
+- **Legacy symmetric (HS256):** set `SUPABASE_JWT_SECRET` (Project Settings →
+  API → legacy "JWT Secret"). Takes precedence if both are set.
+
+**Setup (~5 minutes):**
+
+1. Create a project at [supabase.com](https://supabase.com) (free tier) — or run
+   Supabase yourself via its Docker Compose bundle.
+2. In the dashboard, go to **Project Settings → API** and copy:
+   - **Project URL** → both `VITE_SUPABASE_URL` (`frontend/.env`) **and**
+     `SUPABASE_URL` (`backend/.env`).
+   - **anon / publishable key** → `VITE_SUPABASE_ANON_KEY` (`frontend/.env`).
+   - (Only for the legacy HS256 path: the **JWT Secret** →
+     `SUPABASE_JWT_SECRET`.)
+3. Restart both servers. Sign up / sign in from the app's login screen.
+
+> By default Supabase requires email confirmation on sign-up. For quick local
+> testing you can disable it under **Authentication → Providers → Email**, or
+> just confirm via the emailed link.
+
+**How ownership works:** on first authenticated request the backend mirrors the
+Supabase identity (user UUID + email) into a local `users` table, and every
+assessment carries a `user_id` foreign key to it. All queries filter by the
+signed-in user; fetching another user's assessment by id returns **404** (never
+403), so the API never reveals that someone else's assessment exists.
+
+**Seeded example:** the example assessment is owned by a fixed **demo user**
+(`demo@ai-risk-screener.local`, a synthetic all-zero UUID). Real users don't see
+it — it exists as reference/screenshot data and keeps the "only your own"
+invariant honest.
 
 ---
 
@@ -182,6 +242,8 @@ revision with `--autogenerate`, review the generated file in
 
 ## Using the app
 
+0. **Sign in** — create an account or sign in from the login screen. Everything
+   below is scoped to your account.
 1. **New assessment** — fill in the form (use-case description is required),
    choose industry, deployment context, data types, whether it affects decisions
    about people, and geographic scope. Click **Run assessment**.
@@ -199,10 +261,17 @@ revision with `--autogenerate`, review the generated file in
 | Variable              | Required | Default                     | Purpose                                   |
 | --------------------- | -------- | --------------------------- | ----------------------------------------- |
 | `ANTHROPIC_API_KEY`   | **Yes**  | —                           | Your Anthropic API key                    |
+| `SUPABASE_URL`        | Yes¹     | —                           | Supabase project URL — verifies tokens via JWKS (recommended). See [Authentication](#authentication) |
+| `SUPABASE_JWT_SECRET` | Yes¹     | —                           | Legacy HS256 alternative to `SUPABASE_URL` (takes precedence if both set) |
+| `SUPABASE_JWT_AUD`    | No       | `authenticated`             | Expected JWT audience                     |
 | `ANTHROPIC_MODEL`     | No       | `claude-sonnet-5`           | Model to use                              |
 | `ANTHROPIC_MAX_TOKENS`| No       | `8000`                      | Max output tokens per assessment          |
 | `DATABASE_URL`        | No       | `postgresql+psycopg://ai_risk:ai_risk@localhost:5432/ai_risk` | Postgres URL (SQLAlchemy + psycopg v3) — see [Database & migrations](#database--migrations) |
 | `CORS_ORIGINS`        | No       | `http://localhost:5173,...` | Allowed frontend origins                  |
+
+¹ Set **one** of `SUPABASE_URL` or `SUPABASE_JWT_SECRET` — see
+[Authentication](#authentication). The frontend reads two more (in
+`frontend/.env`): `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 
 > **Model note:** The default is `claude-sonnet-5`. For higher capability set
 > `ANTHROPIC_MODEL=claude-opus-4-8`; for lower cost, `claude-haiku-4-5` — no code
@@ -213,9 +282,12 @@ revision with `--autogenerate`, review the generated file in
 
 ## Error handling
 
-- **Missing API key** — the frontend shows a warning banner on load, and
-  attempting a new assessment returns a clear `503` with guidance. The seeded
-  example is still viewable.
+- **Not signed in / bad token** — the assessment routes return `401`; the
+  frontend shows the login screen. If the server has no `SUPABASE_JWT_SECRET`,
+  the routes return `503` (auth not configured).
+- **Missing API key** — the frontend shows a warning banner once signed in, and
+  attempting a new assessment returns a clear `503` with guidance. Past
+  assessments are still viewable.
 - **Model returns invalid JSON** — the backend retries once with a corrective
   instruction, then returns a `502` with a clear message if it still fails.
 - **Upstream API errors** (auth, rate limit, server) — surfaced as a `502`/`503`
@@ -226,12 +298,15 @@ revision with `--autogenerate`, review the generated file in
 
 ## API endpoints
 
-| Method | Path                       | Description                          |
-| ------ | -------------------------- | ------------------------------------ |
-| GET    | `/api/health`              | Liveness + whether the key is set    |
-| POST   | `/api/assessments`         | Run + save an assessment             |
-| GET    | `/api/assessments`         | List saved assessments (newest first)|
-| GET    | `/api/assessments/{id}`    | Get one full assessment              |
+All `/api/assessments*` routes require a `Authorization: Bearer <token>` header
+and are scoped to the signed-in user. `/api/health` is public.
+
+| Method | Path                       | Auth | Description                          |
+| ------ | -------------------------- | ---- | ------------------------------------ |
+| GET    | `/api/health`              | —    | Liveness + whether the key is set    |
+| POST   | `/api/assessments`         | ✅   | Run + save an assessment (yours)     |
+| GET    | `/api/assessments`         | ✅   | List your assessments (newest first) |
+| GET    | `/api/assessments/{id}`    | ✅   | Get one of your assessments (404 otherwise) |
 
 ---
 

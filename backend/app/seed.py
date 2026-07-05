@@ -10,10 +10,18 @@ The schema must already exist (run `alembic upgrade head` first); this module
 never creates tables.
 """
 
+import uuid
 from datetime import datetime, timezone
 
 from .database import SessionLocal
-from .models import Assessment
+from .models import Assessment, User
+
+# The seeded example is owned by a fixed demo user so it doesn't leak into real
+# users' lists (every query filters by user_id). The all-zero UUID is clearly
+# synthetic and cannot collide with a real Supabase user id. Keep this in sync
+# with the value hardcoded in the auth migration.
+DEMO_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000000")
+DEMO_USER_EMAIL = "demo@ai-risk-screener.local"
 
 EXAMPLE_PROJECT_NAME = "Example: Automated CV Screening Tool"
 
@@ -175,8 +183,19 @@ EXAMPLE_RESULT = {
 }
 
 
+def ensure_demo_user(db) -> User:
+    """Get-or-create the demo user that owns the seeded example. Idempotent."""
+    user = db.get(User, DEMO_USER_ID)
+    if user is None:
+        user = User(id=DEMO_USER_ID, email=DEMO_USER_EMAIL)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    return user
+
+
 def seed_example(db) -> bool:
-    """Insert the example assessment if it is not already present.
+    """Insert the demo user's example assessment if it is not already present.
 
     Returns True if a row was inserted, False if it already existed.
     """
@@ -188,8 +207,10 @@ def seed_example(db) -> bool:
     if existing:
         return False
 
+    ensure_demo_user(db)
     record = Assessment(
         created_at=datetime.now(timezone.utc),
+        user_id=DEMO_USER_ID,
         project_name=EXAMPLE_PROJECT_NAME,
         overall_risk_level=EXAMPLE_RESULT["overall_risk_level"],
         summary=EXAMPLE_RESULT["summary"],
