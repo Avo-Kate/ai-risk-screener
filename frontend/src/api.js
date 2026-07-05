@@ -1,12 +1,25 @@
 // Thin client for the backend API. Uses relative /api URLs; in development the
 // Vite dev server proxies these to the FastAPI backend on :8000.
+//
+// Every request carries the Supabase access token as a Bearer header; the
+// backend verifies it and scopes the response to the signed-in user.
+
+import { supabase } from "./supabaseClient.js";
 
 const BASE = "/api";
 
-async function request(path, options) {
+async function authHeaders() {
+  if (!supabase) return {};
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+async function request(path, options = {}) {
+  const headers = { ...(options.headers || {}), ...(await authHeaders()) };
   let response;
   try {
-    response = await fetch(`${BASE}${path}`, options);
+    response = await fetch(`${BASE}${path}`, { ...options, headers });
   } catch {
     throw new Error(
       "Could not reach the backend. Make sure the API server is running on port 8000."

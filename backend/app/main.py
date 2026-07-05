@@ -14,8 +14,9 @@ from .agent import (
     UpstreamError,
     run_assessment,
 )
+from .auth import get_current_user
 from .database import get_db
-from .models import Assessment
+from .models import Assessment, User
 from .schemas import (
     AssessmentInput,
     AssessmentRecord,
@@ -79,8 +80,12 @@ def health():
 
 
 @app.post("/api/assessments", response_model=AssessmentRecord)
-def create_assessment(payload: AssessmentInput, db: Session = Depends(get_db)):
-    """Run an assessment via the agent, save it, and return the full record."""
+def create_assessment(
+    payload: AssessmentInput,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Run an assessment via the agent, save it for the caller, and return it."""
     try:
         result = run_assessment(payload)
     except APIKeyMissingError as e:
@@ -92,6 +97,7 @@ def create_assessment(payload: AssessmentInput, db: Session = Depends(get_db)):
         raise HTTPException(status_code=502, detail=str(e)) from e
 
     row = Assessment(
+        user_id=current_user.id,
         project_name=payload.project_name,
         overall_risk_level=result.overall_risk_level,
         summary=result.summary,
@@ -105,16 +111,32 @@ def create_assessment(payload: AssessmentInput, db: Session = Depends(get_db)):
 
 
 @app.get("/api/assessments", response_model=list[AssessmentSummary])
-def list_assessments(db: Session = Depends(get_db)):
-    """List past assessments, newest first."""
-    rows = db.query(Assessment).order_by(Assessment.created_at.desc()).all()
+def list_assessments(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List the caller's own assessments, newest first."""
+    rows = (
+        db.query(Assessment)
+        .filter(Assessment.user_id == current_user.id)
+        .order_by(Assessment.created_at.desc())
+        .all()
+    )
     return rows
 
 
 @app.get("/api/assessments/{assessment_id}", response_model=AssessmentRecord)
-def get_assessment(assessment_id: int, db: Session = Depends(get_db)):
-    """Return a single full assessment by id."""
+def get_assessment(
+    assessment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return one of the caller's own assessments by id.
+
+    Returns 404 (not 403) for both a missing id and one owned by another user,
+    so the endpoint never reveals that an assessment exists for someone else.
+    """
     row = db.get(Assessment, assessment_id)
-    if row is None:
+    if row is None or row.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Assessment not found")
     return _to_record(row)

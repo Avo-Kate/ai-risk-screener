@@ -47,6 +47,39 @@ DATABASE_URL = os.getenv(
     "postgresql+psycopg://ai_risk:ai_risk@localhost:5432/ai_risk",
 )
 
+# --- Authentication (Supabase) ------------------------------------------------
+
+# Supabase is used purely as an identity provider. GoTrue (Supabase Auth) issues
+# and signs JWTs; this backend only *verifies* them with the PyJWT library — no
+# password hashing or hand-rolled crypto. Two verification methods are supported,
+# so this works for Supabase Cloud and self-hosted Supabase alike:
+#
+#   1. Asymmetric (recommended; the default for current Supabase projects):
+#      set SUPABASE_URL. Tokens are signed with the project's ES256/RS256 key and
+#      verified against its public JWKS endpoint — no secret needed.
+#   2. Legacy symmetric (older projects / some self-hosted setups):
+#      set SUPABASE_JWT_SECRET (Project Settings -> API -> legacy "JWT Secret").
+#
+# If both are set, the shared secret (HS256) takes precedence.
+
+# Supabase project URL, e.g. https://<ref>.supabase.co. Used to build the JWKS
+# URL ({SUPABASE_URL}/auth/v1/.well-known/jwks.json) for asymmetric verification.
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+
+
+# Read at call time so a missing config is a clear runtime error, not a crash.
+def get_jwt_secret() -> str | None:
+    return os.getenv("SUPABASE_JWT_SECRET")
+
+
+def auth_configured() -> bool:
+    return bool(get_jwt_secret() or SUPABASE_URL)
+
+
+# Supabase access tokens carry aud="authenticated". Override only if your
+# instance is configured differently.
+SUPABASE_JWT_AUD = os.getenv("SUPABASE_JWT_AUD", "authenticated")
+
 # --- CORS ---------------------------------------------------------------------
 
 # The Vite dev server. The frontend also proxies /api -> backend, so CORS is a
