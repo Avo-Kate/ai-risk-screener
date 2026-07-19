@@ -65,3 +65,10 @@ export function getAssessment(id) {
 export function getHealth() {
   return request("/health");
 }
+
+// Deletes all of the caller's app data (assessments + profile row). The
+// Supabase login itself is unaffected — see AccountPage for the user-facing
+// explanation.
+export function deleteMyData() {
+  return request("/me", { method: "DELETE" });
+}

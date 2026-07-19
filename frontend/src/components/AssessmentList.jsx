@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { LEVEL_CLASS } from "../constants.js";
 
 export default function AssessmentList({ assessments, error, onOpen }) {
@@ -13,7 +14,9 @@ export default function AssessmentList({ assessments, error, onOpen }) {
     return (
       <div className="card empty">
         <h2>No assessments yet</h2>
-        <p>Run your first assessment from the “New assessment” tab.</p>
+        <p>
+          <Link to="/">Run your first assessment</Link> to see it saved here.
+        </p>
       </div>
     );
   }
