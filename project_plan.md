@@ -117,7 +117,7 @@ until it bites. There is currently **no test suite and no linter**.*
   portable.
   *Done when:* `ruff check` and `npx prettier --check .` pass; README notes the commands.
 
-- [ ] **0.3 — CI on GitHub Actions**
+- [x] **0.3 — CI on GitHub Actions** *(done 2026-07-19, branch `session-0-3`)*
   Workflow on push/PR: backend job (install deps, `ruff check`, `pytest`
   against a Postgres service container) and frontend job (`npm ci`,
   `npm run build`, prettier check). CI runs on Linux, so none of the local
@@ -439,5 +439,6 @@ anything the next session should know.
 
 | Date | Session | Notes |
 |---|---|---|
+| 2026-07-19 | 0.3 | `.github/workflows/ci.yml`: backend job (Python 3.11, ruff check + format check, pytest against a `postgres:16` service container via `TEST_DATABASE_URL`) and frontend job (Node 22, npm ci, eslint, prettier check, vite build). Full suite verified locally against real Postgres (51 passed, db `ai_risk_test` — dedicated test db, never the dev one: tests drop_all between cases). Lockfile sync verified with `npm ci --dry-run`. Final "done when" (green checks) confirms on the first pushed PR. Phase 0 complete. |
 | 2026-07-19 | 0.2 | Ruff (backend: `ruff.toml`) + Prettier/ESLint (frontend: `.prettierrc.json`, `eslint.config.js`, npm scripts `lint` / `format` / `format:check`). Notable config choices: E501 ignored (formatter owns line length; `SYSTEM_PROMPT` must never be rewrapped — cache invariant), B008 exempted for FastAPI's `Depends`/`Header` idiom, ESLint pinned `^9` (eslint-plugin-react doesn't support v10 yet). `constraints-local.txt` holds the machine-only `cryptography<49` pin; README gained a Development section. All checks green: ruff, prettier, eslint (0 findings), pytest 51 passed, vite build OK. ⚠️ `npm audit`: pre-existing moderate advisory in vite 5's esbuild (dev-server only); fix is a breaking vite upgrade — deferred to Phase 7 (7.1/7.2 dependency work) or a dedicated small session. |
 | 2026-07-19 | 0.1 | 51 tests in `backend/tests/` (agent JSON parsing/retry, auth/JWT via real HS256 path, routes/ownership/404-not-403, denormalised-column consistency). Run: `.venv/bin/python -m pytest` from `backend/`. Tests use in-memory SQLite + `create_all` (Alembic still owns the real schema) and never call Anthropic or Supabase. Dev deps in `backend/requirements-dev.txt` (standalone on purpose — see file comment). For 0.3: CI can run the same suite; `TEST_DATABASE_URL` env var switches tests to a Postgres service container if wanted. |
