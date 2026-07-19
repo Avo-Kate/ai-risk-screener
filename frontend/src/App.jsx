@@ -122,8 +122,8 @@ export default function App() {
           <div>
             <h1>AI Governance Risk Assessment</h1>
             <p className="tagline">
-              Screen an AI use case against the EU AI Act, NIST AI RMF, GDPR, and
-              ISO/IEC 42001.
+              Screen an AI use case against the EU AI Act, NIST AI RMF, GDPR,
+              and ISO/IEC 42001.
             </p>
           </div>
           {signedIn && (
@@ -199,8 +199,8 @@ export default function App() {
       </main>
 
       <footer className="app-footer">
-        Decision-support tool — not legal advice. Validate findings with qualified
-        legal and compliance professionals.
+        Decision-support tool — not legal advice. Validate findings with
+        qualified legal and compliance professionals.
       </footer>
     </div>
   );

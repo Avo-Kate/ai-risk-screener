@@ -10,7 +10,7 @@ Two groups:
 """
 
 from datetime import datetime
-from typing import List, Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -56,9 +56,9 @@ class AssessmentInput(BaseModel):
     use_case_description: str = Field(min_length=10, max_length=8000)
     industry: Industry
     deployment_context: DeploymentContext
-    data_types: List[DataType] = Field(default_factory=list)
+    data_types: list[DataType] = Field(default_factory=list)
     affects_decisions: bool
-    geographic_scope: List[GeographicScope] = Field(default_factory=list)
+    geographic_scope: list[GeographicScope] = Field(default_factory=list)
 
     @field_validator("project_name")
     @classmethod
@@ -81,7 +81,7 @@ class Framework(BaseModel):
     applicability: str
     classification: str
     rationale: str
-    key_obligations: List[str] = Field(default_factory=list)
+    key_obligations: list[str] = Field(default_factory=list)
 
     @field_validator("applicability")
     @classmethod
@@ -101,7 +101,7 @@ class Risk(BaseModel):
     description: str
     severity: str
     likelihood: str
-    mitigations: List[str] = Field(default_factory=list)
+    mitigations: list[str] = Field(default_factory=list)
 
     @field_validator("severity", "likelihood")
     @classmethod
@@ -121,9 +121,9 @@ class AssessmentResult(BaseModel):
 
     overall_risk_level: str
     summary: str
-    frameworks: List[Framework]
-    risks: List[Risk]
-    recommended_next_steps: List[str] = Field(default_factory=list)
+    frameworks: list[Framework]
+    risks: list[Risk]
+    recommended_next_steps: list[str] = Field(default_factory=list)
     # The system prompt requires a decision-support disclaimer. Optional in
     # validation with a fallback so a missing disclaimer never blocks a save.
     disclaimer: str = Field(

@@ -22,7 +22,7 @@ async function request(path, options = {}) {
     response = await fetch(`${BASE}${path}`, { ...options, headers });
   } catch {
     throw new Error(
-      "Could not reach the backend. Make sure the API server is running on port 8000."
+      "Could not reach the backend. Make sure the API server is running on port 8000.",
     );
   }
 

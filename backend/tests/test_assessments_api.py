@@ -71,8 +71,9 @@ class TestCreateAssessment:
         assert body["project_name"] == sample_input["project_name"]
         assert body["overall_risk_level"] == sample_result["overall_risk_level"]
         assert body["summary"] == sample_result["summary"]
-        assert body["input"]["use_case_description"] == (
-            sample_input["use_case_description"]
+        assert (
+            body["input"]["use_case_description"]
+            == (sample_input["use_case_description"])
         )
         assert body["result"]["frameworks"][0]["name"] == "EU AI Act"
         assert "id" in body and "created_at" in body
@@ -93,9 +94,7 @@ class TestCreateAssessment:
     def test_blank_project_name_defaults(
         self, client, auth_headers, sample_input, mock_agent, user_id
     ):
-        body = _create(
-            client, auth_headers, sample_input, user_id, project_name="   "
-        )
+        body = _create(client, auth_headers, sample_input, user_id, project_name="   ")
         assert body["project_name"] == "Untitled project"
 
     @pytest.mark.parametrize(
@@ -115,9 +114,7 @@ class TestCreateAssessment:
         # Guard for the controlled-vocabulary invariant: the backend must
         # reject values the (mirrored) frontend form does not offer.
         payload = dict(sample_input, **bad_field)
-        r = client.post(
-            "/api/assessments", json=payload, headers=auth_headers(user_id)
-        )
+        r = client.post("/api/assessments", json=payload, headers=auth_headers(user_id))
         assert r.status_code == 422
 
     @pytest.mark.parametrize(

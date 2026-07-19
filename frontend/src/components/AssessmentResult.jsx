@@ -14,10 +14,7 @@ function MiniLevel({ label, level }) {
       <span className="mini-level-label">{label}</span>
       <span className="meter" aria-hidden="true">
         {[1, 2, 3].map((n) => (
-          <span
-            key={n}
-            className={n <= filled ? `seg ${cls}-bg` : "seg"}
-          />
+          <span key={n} className={n <= filled ? `seg ${cls}-bg` : "seg"} />
         ))}
       </span>
       <span className={`mini-level-value ${cls}-text`}>{level}</span>
@@ -71,7 +68,9 @@ export default function AssessmentResult({ record, onNew }) {
           </div>
           <div>
             <dt>Data types</dt>
-            <dd>{input.data_types.length ? input.data_types.join(", ") : "—"}</dd>
+            <dd>
+              {input.data_types.length ? input.data_types.join(", ") : "—"}
+            </dd>
           </div>
           <div>
             <dt>Geographic scope</dt>
@@ -157,9 +156,7 @@ export default function AssessmentResult({ record, onNew }) {
       </section>
 
       {/* Disclaimer */}
-      {result.disclaimer && (
-        <p className="disclaimer">{result.disclaimer}</p>
-      )}
+      {result.disclaimer && <p className="disclaimer">{result.disclaimer}</p>}
     </div>
   );
 }

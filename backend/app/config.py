@@ -24,6 +24,7 @@ load_dotenv(BACKEND_DIR / ".env")
 # claude-haiku-4-5 for lower cost) without touching code.
 ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5")
 
+
 # Read at call time (not import time) so a missing key produces a clear runtime
 # error in the request path rather than crashing startup.
 def get_api_key() -> str | None:
