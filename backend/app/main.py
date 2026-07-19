@@ -125,6 +125,29 @@ def list_assessments(
     return rows
 
 
+@app.delete("/api/me")
+def delete_my_data(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete all of the caller's data: their assessments and local users row.
+
+    This is app-level data deletion (GDPR-style). The Supabase login itself is
+    not touched — this backend deliberately holds no Supabase admin credential
+    (see CLAUDE.md); the users row would simply be recreated on a later
+    authenticated request. Removing the login is a manual/admin step.
+    """
+    deleted = (
+        db.query(Assessment)
+        .filter(Assessment.user_id == current_user.id)
+        .delete(synchronize_session=False)
+    )
+    db.delete(current_user)
+    db.commit()
+    logger.info("Deleted data for user %s (%d assessments)", current_user.id, deleted)
+    return {"deleted_assessments": deleted}
+
+
 @app.get("/api/assessments/{assessment_id}", response_model=AssessmentRecord)
 def get_assessment(
     assessment_id: int,
