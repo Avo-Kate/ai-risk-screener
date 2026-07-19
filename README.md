@@ -256,6 +256,33 @@ revision with `--autogenerate`, review the generated file in
 
 ---
 
+## Development: tests, linting & formatting
+
+Backend (from `backend/`, with the venv active):
+
+```bash
+pip install -r requirements-dev.txt   # test/lint tooling (pytest, ruff)
+
+python -m pytest        # test suite — in-memory DB, no network calls
+ruff check .            # lint (add --fix to auto-fix)
+ruff format --check .   # formatting check (drop --check to reformat)
+```
+
+Frontend (from `frontend/`):
+
+```bash
+npm run lint            # ESLint
+npm run format:check    # Prettier check
+npm run format          # Prettier reformat
+```
+
+Configs live in `backend/ruff.toml`, `frontend/eslint.config.js`, and
+`frontend/.prettierrc.json`. If `pip install -r requirements.txt` fails while
+building `cryptography` (Intel-mac/Rosetta setups), add
+`-c constraints-local.txt` — see the comment in that file.
+
+---
+
 ## Configuration reference (`backend/.env`)
 
 | Variable              | Required | Default                     | Purpose                                   |

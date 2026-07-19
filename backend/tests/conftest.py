@@ -183,6 +183,9 @@ def sample_result():
                 "mitigations": ["bias testing across protected attributes"],
             }
         ],
-        "recommended_next_steps": ["Run a DPIA", "Establish human review of shortlists"],
+        "recommended_next_steps": [
+            "Run a DPIA",
+            "Establish human review of shortlists",
+        ],
         "disclaimer": "Decision-support, not legal advice.",
     }

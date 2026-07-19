@@ -220,7 +220,9 @@ def run_assessment(inp: AssessmentInput) -> AssessmentResult:
             return AssessmentResult.model_validate(data)
         except (ValueError, ValidationError) as e:
             last_error = e
-            logger.warning("Assessment parse/validation failed (attempt %d): %s", attempt + 1, e)
+            logger.warning(
+                "Assessment parse/validation failed (attempt %d): %s", attempt + 1, e
+            )
             # Feed the bad output back and ask for a corrected JSON-only response.
             messages = [
                 {"role": "user", "content": user_message},

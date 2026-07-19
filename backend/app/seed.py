@@ -226,7 +226,11 @@ def main() -> None:
     db = SessionLocal()
     try:
         inserted = seed_example(db)
-        print("Seeded example assessment." if inserted else "Example already present; nothing to do.")
+        print(
+            "Seeded example assessment."
+            if inserted
+            else "Example already present; nothing to do."
+        )
     finally:
         db.close()
 

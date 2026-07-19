@@ -1,0 +1,10 @@
+# Machine-specific pip constraints — NOT part of the portable install.
+#
+# cryptography 49.0.0 dropped Intel-macOS wheels; on this machine the venv
+# runs an x86_64 Python under Rosetta (see CLAUDE.md), so 49+ tries to build
+# from source and fails without a Rust toolchain. requirements.txt stays
+# unpinned so Linux/CI and ARM machines get current versions.
+#
+# Use on this machine only:
+#   .venv/bin/pip install -r requirements.txt -c constraints-local.txt
+cryptography<49

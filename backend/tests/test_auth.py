@@ -31,9 +31,7 @@ class TestTokenValidation:
         assert r.status_code == 401
 
     def test_wrong_audience_is_401(self, client, auth_headers, user_id):
-        r = client.get(
-            "/api/assessments", headers=auth_headers(user_id, aud="anon")
-        )
+        r = client.get("/api/assessments", headers=auth_headers(user_id, aud="anon"))
         assert r.status_code == 401
 
     def test_missing_sub_claim_is_401(self, client, auth_headers):
@@ -96,7 +94,9 @@ class TestUserUpsert:
         assert user.email == "new@example.com"
         assert db_session.query(User).count() == 1
 
-    def test_distinct_subjects_get_distinct_rows(self, client, auth_headers, db_session):
+    def test_distinct_subjects_get_distinct_rows(
+        self, client, auth_headers, db_session
+    ):
         client.get("/api/assessments", headers=auth_headers(uuid.uuid4()))
         client.get("/api/assessments", headers=auth_headers(uuid.uuid4()))
         assert db_session.query(User).count() == 2

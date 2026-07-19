@@ -108,7 +108,7 @@ until it bites. There is currently **no test suite and no linter**.*
   denormalised columns match `result_json` on save.
   *Done when:* `.venv/bin/python -m pytest` passes locally with ≥ those cases.
 
-- [ ] **0.2 — Linting & formatting**
+- [x] **0.2 — Linting & formatting** *(done 2026-07-19, branch `session-0-2`)*
   Add `ruff` (lint + format) for the backend and Prettier + ESLint for the
   frontend, with config files committed. Run both once and commit the
   reformat as its own commit so future diffs stay readable. Also: add the
@@ -439,4 +439,5 @@ anything the next session should know.
 
 | Date | Session | Notes |
 |---|---|---|
+| 2026-07-19 | 0.2 | Ruff (backend: `ruff.toml`) + Prettier/ESLint (frontend: `.prettierrc.json`, `eslint.config.js`, npm scripts `lint` / `format` / `format:check`). Notable config choices: E501 ignored (formatter owns line length; `SYSTEM_PROMPT` must never be rewrapped — cache invariant), B008 exempted for FastAPI's `Depends`/`Header` idiom, ESLint pinned `^9` (eslint-plugin-react doesn't support v10 yet). `constraints-local.txt` holds the machine-only `cryptography<49` pin; README gained a Development section. All checks green: ruff, prettier, eslint (0 findings), pytest 51 passed, vite build OK. ⚠️ `npm audit`: pre-existing moderate advisory in vite 5's esbuild (dev-server only); fix is a breaking vite upgrade — deferred to Phase 7 (7.1/7.2 dependency work) or a dedicated small session. |
 | 2026-07-19 | 0.1 | 51 tests in `backend/tests/` (agent JSON parsing/retry, auth/JWT via real HS256 path, routes/ownership/404-not-403, denormalised-column consistency). Run: `.venv/bin/python -m pytest` from `backend/`. Tests use in-memory SQLite + `create_all` (Alembic still owns the real schema) and never call Anthropic or Supabase. Dev deps in `backend/requirements-dev.txt` (standalone on purpose — see file comment). For 0.3: CI can run the same suite; `TEST_DATABASE_URL` env var switches tests to a Postgres service container if wanted. |

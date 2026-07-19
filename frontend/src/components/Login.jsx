@@ -37,7 +37,7 @@ export default function Login() {
         // If email confirmation is on, there's no session yet.
         if (!data.session) {
           setNotice(
-            "Account created. Check your email to confirm, then sign in."
+            "Account created. Check your email to confirm, then sign in.",
           );
           setMode("signin");
         }
@@ -59,14 +59,14 @@ export default function Login() {
   return (
     <div className="auth-card">
       <h2>{mode === "signup" ? "Create an account" : "Sign in"}</h2>
-      <p className="auth-sub">
-        Your assessments are private to your account.
-      </p>
+      <p className="auth-sub">Your assessments are private to your account.</p>
 
       {notice && <div className="banner banner-warning">{notice}</div>}
       {error && (
         <div className="banner banner-error">
-          <strong>Could not {mode === "signup" ? "sign up" : "sign in"}.</strong>{" "}
+          <strong>
+            Could not {mode === "signup" ? "sign up" : "sign in"}.
+          </strong>{" "}
           {error}
         </div>
       )}
@@ -96,11 +96,7 @@ export default function Login() {
           />
         </label>
         <button type="submit" className="btn-primary" disabled={busy}>
-          {busy
-            ? "Working…"
-            : mode === "signup"
-              ? "Sign up"
-              : "Sign in"}
+          {busy ? "Working…" : mode === "signup" ? "Sign up" : "Sign in"}
         </button>
       </form>
 
