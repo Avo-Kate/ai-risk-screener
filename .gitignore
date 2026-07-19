@@ -21,5 +21,15 @@ dist/
 .idea/
 .vscode/
 
-# Local agent context
+# Local agent context (Claude Code and friends)
 CLAUDE.md
+CLAUDE.local.md
+.claude/
+.claude-*/
+.mcp.json
+
+# Other AI assistant config
+.cursor/
+.cursorrules
+.aider*
+.github/copilot-instructions.md
