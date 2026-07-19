@@ -129,7 +129,7 @@ until it bites. There is currently **no test suite and no linter**.*
 *The "proper website" gap: right now there is no password reset, no URLs (a
 refresh loses your place), and no account page.*
 
-- [ ] **1.1 — Add routing (react-router)**
+- [x] **1.1 — Add routing (react-router)** *(done 2026-07-19, branch `phase-1`)*
   Introduce `react-router-dom` and restructure `App.jsx`'s conditional
   rendering into routes: `/` (workspace), `/assessments`, `/assessments/:id`,
   `/login`, `/reset-password`, `/account`. Protect authed routes with a
@@ -138,7 +138,7 @@ refresh loses your place), and no account page.*
   *Done when:* refreshing on any page keeps you there; opening a past
   assessment gives it a shareable URL; signed-out users land on `/login`.
 
-- [ ] **1.2 — Password reset flow**
+- [x] **1.2 — Password reset flow** *(done 2026-07-19, branch `phase-1` — ⚠️ needs Supabase dashboard config + manual email round-trip check, see progress log)*
   "Forgot password?" on the login page → `supabase.auth.resetPasswordForEmail`
   with `redirectTo` the `/reset-password` route → page that calls
   `supabase.auth.updateUser({ password })`. **Requires config outside code:**
@@ -148,7 +148,7 @@ refresh loses your place), and no account page.*
   *Done when:* full round trip works — request email, click link, set new
   password, sign in with it.
 
-- [ ] **1.3 — Account page**
+- [x] **1.3 — Account page** *(done 2026-07-19, branch `phase-1`)*
   `/account`: show email, change password (`updateUser`), change email (with
   Supabase's confirmation flow), and **"Delete my data"** — a new backend
   `DELETE /api/me` that removes the user's assessments and local `users` row.
@@ -158,7 +158,7 @@ refresh loses your place), and no account page.*
   Full account self-deletion is revisited in Phase 7.
   *Done when:* each action works end-to-end; data deletion verified in psql.
 
-- [ ] **1.4 — Sign-up & email confirmation polish**
+- [x] **1.4 — Sign-up & email confirmation polish** *(done 2026-07-19, branch `phase-1`)*
   Resend-confirmation button, clear messaging for unconfirmed accounts,
   password strength hint, friendly error copy for wrong credentials vs.
   unconfirmed email. Review `Login.jsx`'s existing no-session notice.
@@ -439,6 +439,7 @@ anything the next session should know.
 
 | Date | Session | Notes |
 |---|---|---|
+| 2026-07-19 | 1.1–1.4 | Whole phase on branch `phase-1`. **Routing** (react-router v7): `AuthProvider` owns the session; `AppLayout` guards `/`, `/assessments`, `/assessments/:id`, `/account` and redirects to `/login` preserving the origin; `PublicLayout` hosts `/login` + `/reset-password`; logout unmounts pages so no per-user state survives. New-assessment flow now ends at the record's own URL. **Password reset**: forgot-password mode in Login → `resetPasswordForEmail` → `/reset-password` page (`updateUser`). **Account page**: change password/email (Supabase), Delete-my-data → new `DELETE /api/me` (removes assessments + users row; login stays — no admin key by design, Phase 7 revisits full deletion; 5 new tests, 56 total). **Sign-up polish**: friendly error mapping, resend-confirmation, password hint. Verified: pytest, ruff, eslint, prettier, build, live smoke test (all 5 SPA routes 200, `/api/me` 401 unauth, proxy OK). ⚠️ **Kat must do:** Supabase dashboard → Authentication → URL Configuration → add `http://localhost:5173/reset-password` to Redirect URLs, then run one real email round trip (reset + confirmation) in the browser. ⚠️ Gotcha hit: a stale backend on :8000 answered with old code — restart uvicorn after backend changes if not using `--reload`. |
 | 2026-07-19 | 0.3 | `.github/workflows/ci.yml`: backend job (Python 3.11, ruff check + format check, pytest against a `postgres:16` service container via `TEST_DATABASE_URL`) and frontend job (Node 22, npm ci, eslint, prettier check, vite build). Full suite verified locally against real Postgres (51 passed, db `ai_risk_test` — dedicated test db, never the dev one: tests drop_all between cases). Lockfile sync verified with `npm ci --dry-run`. Final "done when" (green checks) confirms on the first pushed PR. Phase 0 complete. |
 | 2026-07-19 | 0.2 | Ruff (backend: `ruff.toml`) + Prettier/ESLint (frontend: `.prettierrc.json`, `eslint.config.js`, npm scripts `lint` / `format` / `format:check`). Notable config choices: E501 ignored (formatter owns line length; `SYSTEM_PROMPT` must never be rewrapped — cache invariant), B008 exempted for FastAPI's `Depends`/`Header` idiom, ESLint pinned `^9` (eslint-plugin-react doesn't support v10 yet). `constraints-local.txt` holds the machine-only `cryptography<49` pin; README gained a Development section. All checks green: ruff, prettier, eslint (0 findings), pytest 51 passed, vite build OK. ⚠️ `npm audit`: pre-existing moderate advisory in vite 5's esbuild (dev-server only); fix is a breaking vite upgrade — deferred to Phase 7 (7.1/7.2 dependency work) or a dedicated small session. |
 | 2026-07-19 | 0.1 | 51 tests in `backend/tests/` (agent JSON parsing/retry, auth/JWT via real HS256 path, routes/ownership/404-not-403, denormalised-column consistency). Run: `.venv/bin/python -m pytest` from `backend/`. Tests use in-memory SQLite + `create_all` (Alembic still owns the real schema) and never call Anthropic or Supabase. Dev deps in `backend/requirements-dev.txt` (standalone on purpose — see file comment). For 0.3: CI can run the same suite; `TEST_DATABASE_URL` env var switches tests to a Postgres service container if wanted. |
