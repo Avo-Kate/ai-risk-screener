@@ -1,0 +1,7 @@
+# Development / test dependencies. Deliberately standalone (does not include
+# requirements.txt) so installing it can never trigger upgrades of runtime deps
+# — relevant on machines where e.g. cryptography must stay pinned (see
+# CLAUDE.md). Install into the same venv:
+#
+#   .venv/bin/pip install -r requirements-dev.txt
+pytest>=8

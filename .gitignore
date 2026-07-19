@@ -4,6 +4,7 @@ __pycache__/
 .venv/
 venv/
 *.egg-info/
+.pytest_cache/
 
 # Environment / secrets
 .env
@@ -23,7 +24,6 @@ dist/
 
 # Local agent context (Claude Code and friends)
 CLAUDE.md
-project_plan.md
 CLAUDE.local.md
 .claude/
 .claude-*/
