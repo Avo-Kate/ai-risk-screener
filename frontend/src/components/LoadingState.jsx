@@ -1,15 +1,33 @@
-// Spinner card. Defaults describe the (long) assessment run; pass title and
-// message for other waits (auth checks, fetches).
+// Generic wait card, for short fetches (auth checks, loading a record).
+// The long assessment run has its own component — see AssessmentProgress.jsx.
+import Card from "./ui/Card.jsx";
+import { cx } from "./ui/cx.js";
+
+export function Spinner({ className = "h-9 w-9" }) {
+  return (
+    <span
+      role="status"
+      aria-label="Loading"
+      className={cx(
+        "inline-block animate-spin rounded-full border-[3px] border-accent-soft border-t-accent",
+        className,
+      )}
+    />
+  );
+}
+
 export default function LoadingState({
-  title = "Analyzing the use case…",
-  message = "The governance agent is reviewing your inputs against the EU AI Act, " +
-    "NIST AI RMF, GDPR, and ISO/IEC 42001. This usually takes 10–30 seconds.",
+  title = "Loading…",
+  message,
+  className,
 }) {
   return (
-    <div className="card loading">
-      <div className="spinner" aria-hidden="true" />
-      <h2>{title}</h2>
-      <p>{message}</p>
-    </div>
+    <Card
+      className={cx("flex flex-col items-center py-12 text-center", className)}
+    >
+      <Spinner />
+      <h2 className="mt-4 text-lg font-semibold text-ink">{title}</h2>
+      {message && <p className="mt-1 max-w-sm text-sm text-muted">{message}</p>}
+    </Card>
   );
 }

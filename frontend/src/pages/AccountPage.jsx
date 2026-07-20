@@ -8,7 +8,33 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { deleteMyData } from "../api.js";
 import { useAuth } from "../auth/AuthContext.jsx";
+import { explainError } from "../components/ErrorState.jsx";
+import Banner from "../components/ui/Banner.jsx";
+import Button from "../components/ui/Button.jsx";
+import Card from "../components/ui/Card.jsx";
+import { Field, TextInput } from "../components/ui/Form.jsx";
+import { UserIcon } from "../components/ui/icons.jsx";
 import { supabase } from "../supabaseClient.js";
+
+/** A settings card: title, optional description, then the form. */
+function SettingsCard({ title, description, danger, children }) {
+  return (
+    <Card
+      as="section"
+      className={danger ? "border-risk-high-solid/40" : undefined}
+    >
+      <h3
+        className={`font-semibold ${danger ? "text-risk-high-fg" : "text-ink"}`}
+      >
+        {title}
+      </h3>
+      {description && (
+        <p className="mt-1 max-w-prose text-sm text-muted">{description}</p>
+      )}
+      <div className="mt-4">{children}</div>
+    </Card>
+  );
+}
 
 export default function AccountPage() {
   const { session } = useAuth();
@@ -85,32 +111,44 @@ export default function AccountPage() {
       await supabase?.auth.signOut();
       navigate("/login", { replace: true });
     } catch (e) {
-      setDeleteError(e.message);
+      setDeleteError(explainError(e).body);
       setDeleteBusy(false);
     }
   }
 
   return (
-    <div className="account">
-      <div className="card account-card">
-        <h2>Account</h2>
-        <p className="muted">
-          Signed in as <strong>{email}</strong>
-        </p>
-      </div>
+    <div className="mx-auto max-w-2xl space-y-5">
+      <Card as="section" className="flex items-center gap-4">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
+          <UserIcon className="h-5 w-5" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold tracking-wide text-muted uppercase">
+            Signed in as
+          </p>
+          <p className="truncate font-semibold text-ink">{email}</p>
+        </div>
+      </Card>
 
-      <div className="card account-card">
-        <h3>Change password</h3>
+      <SettingsCard title="Change password">
         {passwordNotice && (
-          <div className="banner banner-success">{passwordNotice}</div>
+          <Banner tone="success" className="mb-4">
+            {passwordNotice}
+          </Banner>
         )}
         {passwordError && (
-          <div className="banner banner-error">{passwordError}</div>
+          <Banner tone="error" className="mb-4">
+            {passwordError}
+          </Banner>
         )}
-        <form className="auth-form" onSubmit={handleChangePassword}>
-          <label>
-            New password
-            <input
+        <form className="space-y-4" onSubmit={handleChangePassword}>
+          <Field
+            label="New password"
+            htmlFor="account-new-password"
+            hint="At least 6 characters."
+          >
+            <TextInput
+              id="account-new-password"
               type="password"
               autoComplete="new-password"
               required
@@ -118,11 +156,10 @@ export default function AccountPage() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
             />
-            <span className="hint">At least 6 characters.</span>
-          </label>
-          <label>
-            Repeat new password
-            <input
+          </Field>
+          <Field label="Repeat new password" htmlFor="account-confirm-password">
+            <TextInput
+              id="account-confirm-password"
               type="password"
               autoComplete="new-password"
               required
@@ -130,54 +167,62 @@ export default function AccountPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
-          </label>
-          <button type="submit" className="btn-primary" disabled={passwordBusy}>
+          </Field>
+          <Button type="submit" disabled={passwordBusy}>
             {passwordBusy ? "Working…" : "Update password"}
-          </button>
+          </Button>
         </form>
-      </div>
+      </SettingsCard>
 
-      <div className="card account-card">
-        <h3>Change email</h3>
+      <SettingsCard
+        title="Change email"
+        description="You will be asked to confirm the new address from your inbox before it takes effect."
+      >
         {emailNotice && (
-          <div className="banner banner-success">{emailNotice}</div>
+          <Banner tone="success" className="mb-4">
+            {emailNotice}
+          </Banner>
         )}
-        {emailError && <div className="banner banner-error">{emailError}</div>}
-        <form className="auth-form" onSubmit={handleChangeEmail}>
-          <label>
-            New email address
-            <input
+        {emailError && (
+          <Banner tone="error" className="mb-4">
+            {emailError}
+          </Banner>
+        )}
+        <form className="space-y-4" onSubmit={handleChangeEmail}>
+          <Field label="New email address" htmlFor="account-new-email">
+            <TextInput
+              id="account-new-email"
               type="email"
               autoComplete="email"
               required
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
             />
-          </label>
-          <button type="submit" className="btn-primary" disabled={emailBusy}>
+          </Field>
+          <Button type="submit" disabled={emailBusy}>
             {emailBusy ? "Working…" : "Update email"}
-          </button>
+          </Button>
         </form>
-      </div>
+      </SettingsCard>
 
-      <div className="card account-card danger-zone">
-        <h3>Delete my data</h3>
-        <p className="muted">
-          Permanently deletes all your assessments and your profile data from
-          this app. Your sign-in itself is managed by Supabase and is not
-          removed — contact the administrator to delete the login entirely.
-        </p>
+      <SettingsCard
+        danger
+        title="Delete my data"
+        description="Permanently deletes all your assessments and your profile data from this app. Your sign-in itself is managed by Supabase and is not removed — contact the administrator to delete the login entirely."
+      >
         {deleteError && (
-          <div className="banner banner-error">{deleteError}</div>
+          <Banner tone="error" className="mb-4">
+            {deleteError}
+          </Banner>
         )}
-        <button
-          className="btn btn-danger"
+        <Button
+          variant="danger"
           onClick={handleDeleteData}
           disabled={deleteBusy}
         >
           {deleteBusy ? "Deleting…" : "Delete all my data"}
-        </button>
-      </div>
+        </Button>
+      </SettingsCard>
     </div>
   );
 }
