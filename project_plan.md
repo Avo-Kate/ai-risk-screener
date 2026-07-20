@@ -2,7 +2,7 @@
 
 **Owner:** Kat (AI Governance professional)
 **Created:** 2026-07-19
-**Status:** Phases 0–2 complete; next up Phase 3 (assessments done properly)
+**Status:** Phases 0–3 complete; next up Phase 4 (professional reports)
 
 This is the master plan for turning the current prototype into a proper,
 hosted AI Governance assessment platform. It is broken into **phases**, and
@@ -216,20 +216,20 @@ risk-level color coding, generous whitespace.*
 
 ## Phase 3 — Assessments done properly
 
-- [ ] **3.1 — Backend: list querying & pagination**
+- [x] **3.1 — Backend: list querying & pagination** *(done 2026-07-20, branch `phase-3`)*
   Extend `GET /api/assessments` with query params: text search (project
   name/summary), filter by risk level / industry / date range, sort, and
   pagination (`limit`/`offset`, total count in response). Keep the
   `user_id` filter invariant on every query. Add tests.
   *Done when:* pytest covers each param; endpoint documented in FastAPI docs.
 
-- [ ] **3.2 — Past assessments page: search & filters UI**
+- [x] **3.2 — Past assessments page: search & filters UI** *(done 2026-07-20, branch `phase-3`)*
   Wire the list page to 3.1: search box, filter chips (risk level, industry),
   sort dropdown, pagination controls, count display.
   *Done when:* with 10+ assessments seeded, finding a specific one takes
   seconds.
 
-- [ ] **3.3 — Dashboard**
+- [x] **3.3 — Dashboard** *(done 2026-07-20, branch `phase-3`)*
   Fill the Phase 2 slot: stat tiles (total assessments, count by risk level),
   a risk-distribution chart, assessments-over-time chart, recent assessments
   list. Use a lightweight chart lib (e.g. Recharts). Backend: one
@@ -237,14 +237,14 @@ risk-level color coding, generous whitespace.*
   *Done when:* dashboard reflects reality against psql counts; looks good
   with 1 assessment and with 50.
 
-- [ ] **3.4 — Delete & archive**
+- [x] **3.4 — Delete & archive** *(done 2026-07-20, branch `phase-3`)*
   `DELETE /api/assessments/{id}` (404-not-403 pattern, same as GET) and an
   `archived` flag with an Alembic migration; archived items hidden by default,
   visible via filter. Confirm-dialog in UI, no accidental deletes.
   *Done when:* delete and archive/unarchive work; tests cover the ownership
   check on both.
 
-- [ ] **3.5 — Versioned re-assessment**
+- [x] **3.5 — Versioned re-assessment** *(done 2026-07-20, branch `phase-3`)*
   The governance-workflow feature: open a past assessment → "Revise & re-run"
   → form pre-filled with its inputs → new run saved as a new version of the
   same assessment. Data model: `parent_id` (self-reference) + `version` int
@@ -439,6 +439,7 @@ anything the next session should know.
 
 | Date | Session | Notes |
 |---|---|---|
+| 2026-07-20 | 3.1–3.5 | Whole phase on branch `phase-3` (off `phase-2` — **neither Phase 1 nor 2 is merged to `main` yet; merge in order**). Backend tests 56 → **127**. ⚠️ **Breaking API change:** `GET /api/assessments` now returns `{items, total, limit, offset}`, not a bare list. **3.1** — search (`q`, LIKE wildcards escaped so "50%" is literal), filters (`risk_level`, `industry`, `created_after/before`, all repeatable and AND-combined), `sort` (`created_at`/`project_name`/`risk`) + `order`, `limit`/`offset`. Sorting by `risk` uses a CASE for **severity order**, not alphabetical; `id` is a tiebreaker so paging can't drop or repeat rows. Needed a new **denormalised `industry` column** (migration `d06d67a56883`, backfilled from `input_json`) — filtering inside JSON would have contradicted why the other columns are denormalised. **3.2** — filter state lives in the **URL** (`useSearchParams`), so a filtered view is shareable and refresh-proof and the back button steps through it; search is debounced 300 ms. **3.3** — `GET /api/stats` returns totals, by-risk, by-industry and a monthly series; **both by-risk and over_time are zero-filled** (a missing category or month makes a chart lie). Grouping is done in Python, not SQL — month bucketing has no portable spelling across Postgres and the SQLite the tests use; revisit only if one user's row count ever makes it matter. ⚠️ **Deviated from the plan's Recharts suggestion:** the two charts are hand-rolled SVG/HTML. Recharts would have outweighed two simple charts (bundle grew only ~12 KB total) and fought the design tokens. Adopt a chart library if Phase 9 brings richer analytics. **3.4** — `DELETE /api/assessments/{id}` (204) and `PATCH` for `archived`, both 404-not-403; archived rows are hidden from the list *and* excluded from stats; delete confirms in a native `<dialog>` modal, not `window.confirm`. **3.5** — `parent_id` points at the **root** of a version family, not the predecessor, so "all versions" is one equality test instead of a recursion; family key is `COALESCE(parent_id, id)`. List shows only the latest version per family (correlated NOT EXISTS) plus a `version_count`. ⚠️ **Caught a real data-loss bug:** autogenerate gave `parent_id` an `ON DELETE CASCADE`, so deleting an original would have silently destroyed every later version — now `SET NULL`, and the delete route re-parents survivors explicitly (`_detach_version_family`), with tests pinning it. Verified: pytest 127, ruff, eslint, prettier, vite build, a server-render pass over 11 components, live backend restart (all 10 routes in OpenAPI, 401 on each new one unauthenticated), and 8 SPA routes 200 through the dev proxy. ⚠️ **Not visually reviewed in a browser** — the charts and the revise flow especially are worth a look. |
 | 2026-07-20 | 2.1–2.5 | Whole phase on branch `phase-2` (branched off `phase-1`, which is not yet merged to `main` — merge Phase 1 first). **Tailwind v4** (`tailwindcss` + `@tailwindcss/vite`, no config file — v4 configures in CSS). `src/theme.css` is now the app's only stylesheet: design tokens in `@theme` + a small base layer; `styles.css` is **deleted**. ⚠️ **New invariant:** risk-level colours are a contract — use `RISK_BADGE` / `RISK_SOLID` / `RISK_TEXT` from `constants.js`, never hand-pick; `RISK_HEX` in the same file mirrors the CSS values for the Phase 4 PDF (@react-pdf can't read CSS vars) and must be kept in step with `theme.css`. **Shell:** left sidebar + top bar with user menu, sidebar collapses to a drawer below `lg`. ⚠️ **Routes changed:** `/` is now the **Dashboard**, the assessment form moved to **`/new`**. Dashboard currently = primary CTA + recent-assessments list; **3.3 adds the stat tiles and charts** to that page. **Form:** three numbered sections (About the system → Data & context → Scope), per-field helper text, live description-quality counter, inline validation that blocks submit and focuses the first error; data types and geographic scope are now client-side required (backend still allows empty — this is a UX choice, not a schema change). **Result:** risk-coloured verdict banner, at-a-glance strip, framework cards as native `<details>` (ones that apply start expanded, "does not apply" starts collapsed) + expand/collapse all. **States:** `AssessmentProgress` shows honest elapsed time + expected stage + a `beforeunload` guard for the 10–60 s run; `ErrorState`/`explainError` turn 0/401/404/422/502/503 into plain language (`api.js` now attaches `err.status`); a failed run keeps the filled-in form mounted so nothing typed is lost. New UI primitives in `src/components/ui/`. Verified: eslint 0, prettier clean, vite build, pytest 56 passed, all 6 SPA routes 200, `/api/health` OK through the proxy, `/api/assessments` 401 unauth, plus a server-render pass over 12 components with fixture data (all Tailwind token utilities confirmed present in the built CSS). ⚠️ `npm audit` now also flags vite itself (high) alongside the pre-existing esbuild advisory — both are dev-server-only and still deferred to Phase 7. |
 | 2026-07-19 | 1.1–1.4 | Whole phase on branch `phase-1`. **Routing** (react-router v7): `AuthProvider` owns the session; `AppLayout` guards `/`, `/assessments`, `/assessments/:id`, `/account` and redirects to `/login` preserving the origin; `PublicLayout` hosts `/login` + `/reset-password`; logout unmounts pages so no per-user state survives. New-assessment flow now ends at the record's own URL. **Password reset**: forgot-password mode in Login → `resetPasswordForEmail` → `/reset-password` page (`updateUser`). **Account page**: change password/email (Supabase), Delete-my-data → new `DELETE /api/me` (removes assessments + users row; login stays — no admin key by design, Phase 7 revisits full deletion; 5 new tests, 56 total). **Sign-up polish**: friendly error mapping, resend-confirmation, password hint. Verified: pytest, ruff, eslint, prettier, build, live smoke test (all 5 SPA routes 200, `/api/me` 401 unauth, proxy OK). ⚠️ **Kat must do:** Supabase dashboard → Authentication → URL Configuration → add `http://localhost:5173/reset-password` to Redirect URLs, then run one real email round trip (reset + confirmation) in the browser. ⚠️ Gotcha hit: a stale backend on :8000 answered with old code — restart uvicorn after backend changes if not using `--reload`. |
 | 2026-07-19 | 0.3 | `.github/workflows/ci.yml`: backend job (Python 3.11, ruff check + format check, pytest against a `postgres:16` service container via `TEST_DATABASE_URL`) and frontend job (Node 22, npm ci, eslint, prettier check, vite build). Full suite verified locally against real Postgres (51 passed, db `ai_risk_test` — dedicated test db, never the dev one: tests drop_all between cases). Lockfile sync verified with `npm ci --dry-run`. Final "done when" (green checks) confirms on the first pushed PR. Phase 0 complete. |

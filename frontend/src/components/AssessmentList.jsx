@@ -1,8 +1,9 @@
 // The list of past assessments.
 //
-// Search, filtering, sorting and pagination arrive in Phase 3.2 — this
-// deliberately stays a plain list until the backend gains the query params in
-// 3.1.
+// Only renders rows and the "nothing here yet" empty state. Search, filters,
+// sorting and paging are the page's job (AssessmentsListPage) — note that the
+// empty state below means "this account has no assessments at all", which is a
+// different message from "your filters matched nothing" (see NoMatches).
 import { Link } from "react-router-dom";
 import AssessmentRow from "./AssessmentRow.jsx";
 import EmptyState from "./EmptyState.jsx";
@@ -25,17 +26,13 @@ export default function AssessmentList({ assessments }) {
     );
   }
 
+  // The count and paging controls are rendered by the page (Pagination), so
+  // this stays a plain list.
   return (
-    <div>
-      <p className="mb-3 text-sm text-muted">
-        {assessments.length}{" "}
-        {assessments.length === 1 ? "assessment" : "assessments"}
-      </p>
-      <ul className="space-y-2.5">
-        {assessments.map((a) => (
-          <AssessmentRow key={a.id} assessment={a} />
-        ))}
-      </ul>
-    </div>
+    <ul className="space-y-2.5">
+      {assessments.map((a) => (
+        <AssessmentRow key={a.id} assessment={a} />
+      ))}
+    </ul>
   );
 }

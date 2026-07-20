@@ -159,15 +159,18 @@ class TestOwnership:
 
         r = client.get("/api/assessments", headers=auth_headers(alice))
         assert r.status_code == 200
-        rows = r.json()
-        assert [row["id"] for row in rows] == [second["id"], first["id"]]
-        assert all(row["project_name"].startswith("Alice") for row in rows)
+        body = r.json()
+        assert [row["id"] for row in body["items"]] == [second["id"], first["id"]]
+        assert all(row["project_name"].startswith("Alice") for row in body["items"])
+        # total counts only Alice's rows, never Bob's.
+        assert body["total"] == 2
 
     def test_list_is_summary_shaped(
         self, client, auth_headers, sample_input, mock_agent, user_id
     ):
         _create(client, auth_headers, sample_input, user_id)
-        row = client.get("/api/assessments", headers=auth_headers(user_id)).json()[0]
+        body = client.get("/api/assessments", headers=auth_headers(user_id)).json()
+        row = body["items"][0]
         # Summaries must stay light: no JSON blobs in the list view.
         assert "input" not in row and "result" not in row
 

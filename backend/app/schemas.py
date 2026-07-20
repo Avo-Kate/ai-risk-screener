@@ -156,7 +156,31 @@ class AssessmentSummary(BaseModel):
     project_name: str
     overall_risk_level: str
     summary: str
+    industry: str
     created_at: datetime
+    version: int
+    # How many versions exist in this row's family. 1 means "never re-run".
+    # Computed per page, not stored — see _attach_version_counts in main.py.
+    version_count: int = 1
+
+
+# Sort keys the list endpoint accepts. "risk" orders by actual severity rather
+# than alphabetically — see RISK_ORDER in main.py.
+SortField = Literal["created_at", "project_name", "risk"]
+SortOrder = Literal["asc", "desc"]
+
+
+class AssessmentPage(BaseModel):
+    """One page of the caller's assessments, plus the totals a UI needs.
+
+    `total` is the count matching the current filters (not the page), so the
+    frontend can render "showing 1-20 of 57" and drive pagination controls.
+    """
+
+    items: list[AssessmentSummary]
+    total: int
+    limit: int
+    offset: int
 
 
 class AssessmentRecord(BaseModel):
@@ -168,10 +192,57 @@ class AssessmentRecord(BaseModel):
     project_name: str
     overall_risk_level: str
     summary: str
+    industry: str
+    archived: bool
     created_at: datetime
+    version: int
+    parent_id: int | None = None
     input: AssessmentInput
     result: AssessmentResult
 
 
+class AssessmentUpdate(BaseModel):
+    """The mutable flags on a saved assessment.
+
+    Deliberately tiny: an assessment's content is a record of what the model
+    said at a point in time and is never edited in place.
+    """
+
+    archived: bool | None = None
+
+
 class ErrorResponse(BaseModel):
     detail: str
+
+
+# --- Dashboard statistics -----------------------------------------------------
+
+
+class RiskCount(BaseModel):
+    level: str
+    count: int
+
+
+class IndustryCount(BaseModel):
+    industry: str
+    count: int
+
+
+class MonthCount(BaseModel):
+    month: str  # "YYYY-MM"
+    count: int
+
+
+class StatsResponse(BaseModel):
+    """Per-user aggregates for the dashboard.
+
+    Both `by_risk_level` and `over_time` are **zero-filled**: every risk level
+    appears even at count 0, and every month in the window appears even if
+    nothing was assessed then. Charts need the gaps to be explicit zeros rather
+    than missing categories, or bars silently disappear and time axes lie.
+    """
+
+    total: int
+    by_risk_level: list[RiskCount]
+    by_industry: list[IndustryCount]
+    over_time: list[MonthCount]

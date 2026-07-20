@@ -214,6 +214,7 @@ def seed_example(db) -> bool:
         project_name=EXAMPLE_PROJECT_NAME,
         overall_risk_level=EXAMPLE_RESULT["overall_risk_level"],
         summary=EXAMPLE_RESULT["summary"],
+        industry=EXAMPLE_INPUT["industry"],
         input_json=EXAMPLE_INPUT,
         result_json=EXAMPLE_RESULT,
     )
