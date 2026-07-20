@@ -76,10 +76,10 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-canvas">
+    <div className="min-h-screen bg-canvas print:bg-white">
       <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
 
-      <div className="lg:pl-64">
+      <div className="lg:pl-64 print:pl-0">
         <TopBar
           title={titleFor(location.pathname)}
           email={session.user?.email}
@@ -87,7 +87,7 @@ export default function AppLayout() {
           onLogout={handleLogout}
         />
 
-        <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 print:max-w-none print:p-0">
           {apiKeyMissing && (
             <Banner
               tone="warning"
@@ -102,7 +102,7 @@ export default function AppLayout() {
           <Outlet />
         </main>
 
-        <footer className="mx-auto max-w-5xl px-4 pb-10 sm:px-6 lg:px-8">
+        <footer className="mx-auto max-w-5xl px-4 pb-10 sm:px-6 lg:px-8 print:hidden">
           <p className="border-t border-line pt-6 text-xs text-muted">
             Decision-support tool — not legal advice. Validate findings with
             qualified legal and compliance professionals.

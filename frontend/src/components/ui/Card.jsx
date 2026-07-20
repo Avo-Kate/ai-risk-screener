@@ -12,7 +12,7 @@ export default function Card({
   return (
     <Tag
       className={cx(
-        "rounded-xl border border-line bg-surface shadow-card",
+        "rounded-xl border border-line bg-surface shadow-card print:break-inside-avoid print:shadow-none",
         padded && "p-5 sm:p-6",
         className,
       )}
