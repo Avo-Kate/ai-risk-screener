@@ -1,0 +1,125 @@
+/* =============================================================================
+   Design tokens — the single source of truth for the app's visual language.
+   =============================================================================
+
+   Everything here is declared inside Tailwind's `@theme`, which does two things
+   at once: it emits each token as a real CSS custom property (usable in plain
+   CSS, and readable at runtime) *and* it generates matching Tailwind utilities.
+
+   So `--color-ink` gives you `text-ink`, `bg-ink`, `border-ink`, and
+   `var(--color-ink)`. Add a token here and the utility exists; there is no
+   separate config file to keep in sync.
+
+   Design direction (Phase 2): calm, credible, professional — a governance
+   instrument, not a SaaS landing page. Restrained navy accent, paper-like
+   neutrals, hairline borders instead of heavy shadows, generous whitespace,
+   and colour reserved almost entirely for risk semantics.
+
+   ---------------------------------------------------------------------------
+   RISK COLOURS ARE A CONTRACT
+   ---------------------------------------------------------------------------
+   The four risk levels (low / medium / high / unacceptable) must look identical
+   everywhere they appear — assessment results, list rows, the Phase 3 dashboard
+   and the Phase 4 PDF. Never hand-pick a colour for a risk level at a call
+   site. Instead use the class strings exported from `constants.js`
+   (`RISK_BADGE`, `RISK_SOLID`, `RISK_TEXT`).
+
+   `constants.js` also mirrors these hex values in `RISK_HEX`, because
+   @react-pdf/renderer (Phase 4) cannot read CSS variables. That mirror must be
+   updated whenever the values below change — same rule as the
+   `schemas.py` ↔ `constants.js` vocabulary mirror.
+   ========================================================================== */
+
+@import "tailwindcss";
+
+@theme {
+  /* --- Typography ------------------------------------------------------- */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    system-ui, sans-serif;
+
+  /* --- Neutrals --------------------------------------------------------- */
+  /* Cool, paper-like greys. `canvas` is the page, `surface` is a card. */
+  --color-canvas: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-sunken: #f1f3f6;
+  --color-line: #e4e8ee;
+  --color-line-strong: #ccd3dd;
+
+  --color-ink: #16202b;
+  --color-ink-soft: #3f4c5e;
+  --color-muted: #67748a;
+
+  /* --- Accent (navy — the product's identity) --------------------------- */
+  --color-accent: #1f4e79;
+  --color-accent-hover: #163a5c;
+  --color-accent-soft: #e8eef7;
+  --color-accent-line: #c3d3e6;
+
+  /* --- Risk semantics (see the contract note above) --------------------- */
+  --color-risk-low-bg: #e6f4ea;
+  --color-risk-low-fg: #1e7d4f;
+  --color-risk-low-solid: #34a76b;
+
+  --color-risk-medium-bg: #fbf1dd;
+  --color-risk-medium-fg: #95650b;
+  --color-risk-medium-solid: #d99826;
+
+  --color-risk-high-bg: #fdeceb;
+  --color-risk-high-fg: #b42318;
+  --color-risk-high-solid: #e0533d;
+
+  /* Unacceptable inverts: solid dark ground, light type. */
+  --color-risk-unacceptable-bg: #5b1a14;
+  --color-risk-unacceptable-fg: #ffffff;
+  --color-risk-unacceptable-solid: #7a241c;
+
+  /* --- Elevation -------------------------------------------------------- */
+  /* Deliberately subtle: structure comes from borders, not drop shadows. */
+  --shadow-card:
+    0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --shadow-raised: 0 4px 12px rgba(16, 24, 40, 0.08);
+}
+
+/* -----------------------------------------------------------------------------
+   Base layer — the few global rules the app relies on.
+   Everything else is a utility class on the element that needs it.
+   -------------------------------------------------------------------------- */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Headings are sized per-use with utilities; only the shared voice is here. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -0.011em;
+    text-wrap: balance;
+  }
+
+  /* Form controls inherit the app font rather than the browser's default. */
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  /* A single visible focus treatment for keyboard users, app-wide. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}

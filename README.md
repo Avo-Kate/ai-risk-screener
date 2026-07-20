@@ -40,12 +40,16 @@ ai-risk-screener/
 │   └── .env.example
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx            # Auth-gated shell (login screen vs. app)
+│   │   ├── App.jsx            # Route table
 │   │   ├── api.js             # fetch wrappers; attaches the Bearer token
 │   │   ├── supabaseClient.js  # Supabase Auth client (VITE_SUPABASE_* env)
-│   │   ├── constants.js
-│   │   ├── styles.css
-│   │   └── components/    # Form, Loading, Result, List, Login
+│   │   ├── constants.js       # Form vocabularies + risk-colour maps
+│   │   ├── format.js          # Shared date formatting
+│   │   ├── theme.css          # Tailwind v4 import + design tokens (@theme)
+│   │   ├── auth/              # AuthProvider / useAuth
+│   │   ├── layouts/           # AppLayout (sidebar + top bar), PublicLayout
+│   │   ├── pages/             # Dashboard, New, List, Detail, Account, Login…
+│   │   └── components/        # Form, Result, states, and ui/ primitives
 │   ├── index.html
 │   ├── package.json
 │   ├── vite.config.js

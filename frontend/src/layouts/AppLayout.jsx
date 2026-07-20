@@ -1,28 +1,40 @@
-// Shell for all signed-in routes: header with navigation and user area,
-// API-key warning banner, and the routed page in <Outlet />.
+// Shell for all signed-in routes: sidebar + top bar + the routed page.
 //
 // Also the auth gate: unauthenticated visitors are redirected to /login with
 // the original location preserved, so signing in returns them where they were.
 import { useEffect, useState } from "react";
-import {
-  Navigate,
-  NavLink,
-  Outlet,
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
+import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { getHealth } from "../api.js";
 import { useAuth } from "../auth/AuthContext.jsx";
+import Banner, { Code } from "../components/ui/Banner.jsx";
 import LoadingState from "../components/LoadingState.jsx";
 import { supabase } from "../supabaseClient.js";
+import Sidebar from "./Sidebar.jsx";
+import TopBar from "./TopBar.jsx";
 
-const tabClass = ({ isActive }) => (isActive ? "tab active" : "tab");
+// Page titles for the top bar. Matched longest-prefix-first so
+// /assessments/:id wins over /assessments.
+const TITLES = [
+  ["/assessments/", "Assessment"],
+  ["/assessments", "Past assessments"],
+  ["/account", "Account"],
+  ["/new", "New assessment"],
+  ["/", "Dashboard"],
+];
+
+function titleFor(pathname) {
+  const hit = TITLES.find(([prefix]) =>
+    prefix === "/" ? pathname === "/" : pathname.startsWith(prefix),
+  );
+  return hit ? hit[1] : "AI Risk Screener";
+}
 
 export default function AppLayout() {
   const { session, authReady } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [apiKeyMissing, setApiKeyMissing] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
 
   const signedIn = Boolean(session);
 
@@ -34,12 +46,19 @@ export default function AppLayout() {
       .catch(() => {});
   }, [signedIn]);
 
+  // A navigation always dismisses the mobile drawer.
+  useEffect(() => {
+    setNavOpen(false);
+  }, [location.pathname]);
+
   if (!authReady) {
     return (
-      <div className="app">
-        <main className="container">
-          <LoadingState title="Loading…" message="Checking your session." />
-        </main>
+      <div className="flex min-h-screen items-center justify-center bg-canvas p-6">
+        <LoadingState
+          title="Loading…"
+          message="Checking your session."
+          className="w-full max-w-md"
+        />
       </div>
     );
   }
@@ -56,56 +75,39 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <div className="app-header-inner">
-          <div>
-            <h1>AI Governance Risk Assessment</h1>
-            <p className="tagline">
-              Screen an AI use case against the EU AI Act, NIST AI RMF, GDPR,
-              and ISO/IEC 42001.
-            </p>
-          </div>
-          <div className="header-right">
-            <nav className="tabs">
-              <NavLink to="/" end className={tabClass}>
-                New assessment
-              </NavLink>
-              <NavLink to="/assessments" className={tabClass}>
-                Past assessments
-              </NavLink>
-              <NavLink to="/account" className={tabClass}>
-                Account
-              </NavLink>
-            </nav>
-            <div className="user-area">
-              <span className="user-email" title={session.user?.email}>
-                {session.user?.email}
-              </span>
-              <button className="tab" onClick={handleLogout}>
-                Log out
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-canvas">
+      <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
 
-      <main className="container">
-        {apiKeyMissing && (
-          <div className="banner banner-warning">
-            <strong>API key not configured.</strong> Set{" "}
-            <code>ANTHROPIC_API_KEY</code> in <code>backend/.env</code> and
-            restart the backend to run new assessments. You can still browse
-            past assessments.
-          </div>
-        )}
-        <Outlet />
-      </main>
+      <div className="lg:pl-64">
+        <TopBar
+          title={titleFor(location.pathname)}
+          email={session.user?.email}
+          onOpenNav={() => setNavOpen(true)}
+          onLogout={handleLogout}
+        />
 
-      <footer className="app-footer">
-        Decision-support tool — not legal advice. Validate findings with
-        qualified legal and compliance professionals.
-      </footer>
+        <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+          {apiKeyMissing && (
+            <Banner
+              tone="warning"
+              title="API key not configured."
+              className="mb-6"
+            >
+              Set <Code>ANTHROPIC_API_KEY</Code> in <Code>backend/.env</Code>{" "}
+              and restart the backend to run new assessments. You can still
+              browse past assessments.
+            </Banner>
+          )}
+          <Outlet />
+        </main>
+
+        <footer className="mx-auto max-w-5xl px-4 pb-10 sm:px-6 lg:px-8">
+          <p className="border-t border-line pt-6 text-xs text-muted">
+            Decision-support tool — not legal advice. Validate findings with
+            qualified legal and compliance professionals.
+          </p>
+        </footer>
+      </div>
     </div>
   );
 }

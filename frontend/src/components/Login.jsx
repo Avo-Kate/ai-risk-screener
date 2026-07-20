@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { supabase, supabaseConfigured } from "../supabaseClient.js";
+import Banner, { Code } from "./ui/Banner.jsx";
+import Button, { LinkButton } from "./ui/Button.jsx";
+import Card from "./ui/Card.jsx";
+import { Field, TextInput } from "./ui/Form.jsx";
 
 // Email + password sign in / sign up / password reset via Supabase Auth.
 // Supabase owns the credentials; on success it establishes a session and the
@@ -38,6 +42,18 @@ const TITLES = {
   forgot: "Reset your password",
 };
 
+const SUBTITLES = {
+  signin: "Your assessments are private to your account.",
+  signup: "Your assessments are private to your account.",
+  forgot: "Enter your email and we will send you a password reset link.",
+};
+
+const SUBMIT_LABELS = {
+  signin: "Sign in",
+  signup: "Sign up",
+  forgot: "Send reset link",
+};
+
 export default function Login() {
   const [mode, setMode] = useState("signin"); // "signin" | "signup" | "forgot"
   const [email, setEmail] = useState("");
@@ -51,15 +67,14 @@ export default function Login() {
 
   if (!supabaseConfigured) {
     return (
-      <div className="auth-card">
-        <h2>Sign in</h2>
-        <div className="banner banner-warning">
-          <strong>Authentication is not configured.</strong> Set{" "}
-          <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code>{" "}
-          in <code>frontend/.env</code> (see <code>frontend/.env.example</code>)
-          and restart the dev server.
-        </div>
-      </div>
+      <Card>
+        <h2 className="mb-3 text-xl font-semibold text-ink">Sign in</h2>
+        <Banner tone="warning" title="Authentication is not configured.">
+          Set <Code>VITE_SUPABASE_URL</Code> and{" "}
+          <Code>VITE_SUPABASE_ANON_KEY</Code> in <Code>frontend/.env</Code> (see{" "}
+          <Code>frontend/.env.example</Code>) and restart the dev server.
+        </Banner>
+      </Card>
     );
   }
 
@@ -134,42 +149,46 @@ export default function Login() {
   }
 
   return (
-    <div className="auth-card">
-      <h2>{TITLES[mode]}</h2>
-      <p className="auth-sub">
-        {mode === "forgot"
-          ? "Enter your email and we will send you a password reset link."
-          : "Your assessments are private to your account."}
-      </p>
+    <Card>
+      <h2 className="text-xl font-semibold text-ink">{TITLES[mode]}</h2>
+      <p className="mt-1 text-sm text-muted">{SUBTITLES[mode]}</p>
 
-      {notice && <div className="banner banner-success">{notice}</div>}
-      {error && <div className="banner banner-error">{error}</div>}
+      {(notice || error) && (
+        <div className="mt-4 space-y-3">
+          {notice && <Banner tone="success">{notice}</Banner>}
+          {error && <Banner tone="error">{error}</Banner>}
+        </div>
+      )}
 
       {showResend && (
-        <p className="auth-toggle">
+        <p className="mt-4 text-sm text-muted">
           Did the email not arrive?{" "}
-          <button className="link" onClick={handleResend} disabled={busy}>
+          <LinkButton onClick={handleResend} disabled={busy}>
             Resend confirmation email
-          </button>
+          </LinkButton>
         </p>
       )}
 
-      <form className="auth-form" onSubmit={handleSubmit}>
-        <label>
-          Email
-          <input
+      <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+        <Field label="Email" htmlFor="email">
+          <TextInput
+            id="email"
             type="email"
             autoComplete="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-        </label>
+        </Field>
 
         {mode !== "forgot" && (
-          <label>
-            Password
-            <input
+          <Field
+            label="Password"
+            htmlFor="password"
+            hint={mode === "signup" ? "At least 6 characters." : undefined}
+          >
+            <TextInput
+              id="password"
               type="password"
               autoComplete={
                 mode === "signup" ? "new-password" : "current-password"
@@ -179,55 +198,47 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            {mode === "signup" && (
-              <span className="hint">At least 6 characters.</span>
-            )}
-          </label>
+          </Field>
         )}
 
-        <button type="submit" className="btn-primary" disabled={busy}>
-          {busy
-            ? "Working…"
-            : mode === "signup"
-              ? "Sign up"
-              : mode === "forgot"
-                ? "Send reset link"
-                : "Sign in"}
-        </button>
+        <Button type="submit" className="w-full" disabled={busy}>
+          {busy ? "Working…" : SUBMIT_LABELS[mode]}
+        </Button>
       </form>
 
-      {mode === "signin" && (
-        <p className="auth-toggle">
-          <button className="link" onClick={() => switchMode("forgot")}>
-            Forgot password?
-          </button>
-        </p>
-      )}
-
-      <p className="auth-toggle">
-        {mode === "signup" ? (
-          <>
-            Already have an account?{" "}
-            <button className="link" onClick={() => switchMode("signin")}>
-              Sign in
-            </button>
-          </>
-        ) : mode === "forgot" ? (
-          <>
-            Remembered it after all?{" "}
-            <button className="link" onClick={() => switchMode("signin")}>
-              Back to sign in
-            </button>
-          </>
-        ) : (
-          <>
-            No account?{" "}
-            <button className="link" onClick={() => switchMode("signup")}>
-              Create one
-            </button>
-          </>
+      <div className="mt-5 space-y-2 border-t border-line pt-4 text-center text-sm text-muted">
+        {mode === "signin" && (
+          <p>
+            <LinkButton onClick={() => switchMode("forgot")}>
+              Forgot password?
+            </LinkButton>
+          </p>
         )}
-      </p>
-    </div>
+        <p>
+          {mode === "signup" ? (
+            <>
+              Already have an account?{" "}
+              <LinkButton onClick={() => switchMode("signin")}>
+                Sign in
+              </LinkButton>
+            </>
+          ) : mode === "forgot" ? (
+            <>
+              Remembered it after all?{" "}
+              <LinkButton onClick={() => switchMode("signin")}>
+                Back to sign in
+              </LinkButton>
+            </>
+          ) : (
+            <>
+              No account?{" "}
+              <LinkButton onClick={() => switchMode("signup")}>
+                Create one
+              </LinkButton>
+            </>
+          )}
+        </p>
+      </div>
+    </Card>
   );
 }

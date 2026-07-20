@@ -21,9 +21,12 @@ async function request(path, options = {}) {
   try {
     response = await fetch(`${BASE}${path}`, { ...options, headers });
   } catch {
-    throw new Error(
+    // No response at all — the backend is down or unreachable.
+    const err = new Error(
       "Could not reach the backend. Make sure the API server is running on port 8000.",
     );
+    err.status = 0;
+    throw err;
   }
 
   if (!response.ok) {
@@ -40,7 +43,11 @@ async function request(path, options = {}) {
     } catch {
       /* non-JSON error body; keep the default message */
     }
-    throw new Error(detail);
+    // The status is carried on the error so the UI can explain *which* kind of
+    // failure happened (see ErrorState.jsx) rather than echoing raw detail.
+    const err = new Error(detail);
+    err.status = response.status;
+    throw err;
   }
 
   return response.json();

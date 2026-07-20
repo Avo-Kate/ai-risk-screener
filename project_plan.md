@@ -2,7 +2,7 @@
 
 **Owner:** Kat (AI Governance professional)
 **Created:** 2026-07-19
-**Status:** Phase 0 not started
+**Status:** Phases 0–2 complete; next up Phase 3 (assessments done properly)
 
 This is the master plan for turning the current prototype into a proper,
 hosted AI Governance assessment platform. It is broken into **phases**, and
@@ -171,7 +171,7 @@ refresh loses your place), and no account page.*
 flashy SaaS landing page. Think regulator-friendly: strong typography, clear
 risk-level color coding, generous whitespace.*
 
-- [ ] **2.1 — Design foundation: Tailwind + design tokens**
+- [x] **2.1 — Design foundation: Tailwind + design tokens** *(done 2026-07-20, branch `phase-2`)*
   Install Tailwind CSS v4. Define tokens as CSS variables consumed by
   Tailwind: color palette (including one semantic color per risk level —
   these must stay consistent everywhere: lists, dashboard, PDF), type scale,
@@ -180,7 +180,7 @@ risk-level color coding, generous whitespace.*
   *Done when:* app shell renders from Tailwind; token file documented; rest of
   the app still works on old CSS temporarily.
 
-- [ ] **2.2 — App shell & navigation**
+- [x] **2.2 — App shell & navigation** *(done 2026-07-20, branch `phase-2`)*
   Replace the header-tabs layout with a proper shell: left sidebar (Dashboard,
   New assessment, Past assessments, Account) + top bar (user menu, logout).
   Responsive: sidebar collapses on mobile. This creates the empty Dashboard
@@ -188,7 +188,7 @@ risk-level color coding, generous whitespace.*
   *Done when:* navigation works on desktop and a phone-sized window; active
   route is highlighted.
 
-- [ ] **2.3 — Assessment form UX**
+- [x] **2.3 — Assessment form UX** *(done 2026-07-20, branch `phase-2`)*
   Rework `AssessmentForm.jsx`: group fields into logical steps or sections
   (About the system → Data & context → Scope), inline validation before
   submit, helper text explaining what each field influences, character
@@ -197,7 +197,7 @@ risk-level color coding, generous whitespace.*
   *Done when:* a first-time user can fill the form without guessing; invalid
   submits are impossible.
 
-- [ ] **2.4 — Results presentation**
+- [x] **2.4 — Results presentation** *(done 2026-07-20, branch `phase-2`)*
   Rework `AssessmentResult.jsx`: overall risk verdict as a prominent banner,
   one card per framework with expandable detail, consistent risk badges,
   clear obligations/recommendations lists, visible disclaimer. This layout is
@@ -205,7 +205,7 @@ risk-level color coding, generous whitespace.*
   *Done when:* a stakeholder could read the result cold and understand the
   verdict in 30 seconds.
 
-- [ ] **2.5 — Loading, empty & error states**
+- [x] **2.5 — Loading, empty & error states** *(done 2026-07-20, branch `phase-2`)*
   The assessment call takes 10–60 s with no streaming: design an honest
   progress state (what's happening, expected wait, don't navigate away).
   Empty states for no assessments yet; error states for 502/503 with
@@ -439,6 +439,7 @@ anything the next session should know.
 
 | Date | Session | Notes |
 |---|---|---|
+| 2026-07-20 | 2.1–2.5 | Whole phase on branch `phase-2` (branched off `phase-1`, which is not yet merged to `main` — merge Phase 1 first). **Tailwind v4** (`tailwindcss` + `@tailwindcss/vite`, no config file — v4 configures in CSS). `src/theme.css` is now the app's only stylesheet: design tokens in `@theme` + a small base layer; `styles.css` is **deleted**. ⚠️ **New invariant:** risk-level colours are a contract — use `RISK_BADGE` / `RISK_SOLID` / `RISK_TEXT` from `constants.js`, never hand-pick; `RISK_HEX` in the same file mirrors the CSS values for the Phase 4 PDF (@react-pdf can't read CSS vars) and must be kept in step with `theme.css`. **Shell:** left sidebar + top bar with user menu, sidebar collapses to a drawer below `lg`. ⚠️ **Routes changed:** `/` is now the **Dashboard**, the assessment form moved to **`/new`**. Dashboard currently = primary CTA + recent-assessments list; **3.3 adds the stat tiles and charts** to that page. **Form:** three numbered sections (About the system → Data & context → Scope), per-field helper text, live description-quality counter, inline validation that blocks submit and focuses the first error; data types and geographic scope are now client-side required (backend still allows empty — this is a UX choice, not a schema change). **Result:** risk-coloured verdict banner, at-a-glance strip, framework cards as native `<details>` (ones that apply start expanded, "does not apply" starts collapsed) + expand/collapse all. **States:** `AssessmentProgress` shows honest elapsed time + expected stage + a `beforeunload` guard for the 10–60 s run; `ErrorState`/`explainError` turn 0/401/404/422/502/503 into plain language (`api.js` now attaches `err.status`); a failed run keeps the filled-in form mounted so nothing typed is lost. New UI primitives in `src/components/ui/`. Verified: eslint 0, prettier clean, vite build, pytest 56 passed, all 6 SPA routes 200, `/api/health` OK through the proxy, `/api/assessments` 401 unauth, plus a server-render pass over 12 components with fixture data (all Tailwind token utilities confirmed present in the built CSS). ⚠️ `npm audit` now also flags vite itself (high) alongside the pre-existing esbuild advisory — both are dev-server-only and still deferred to Phase 7. |
 | 2026-07-19 | 1.1–1.4 | Whole phase on branch `phase-1`. **Routing** (react-router v7): `AuthProvider` owns the session; `AppLayout` guards `/`, `/assessments`, `/assessments/:id`, `/account` and redirects to `/login` preserving the origin; `PublicLayout` hosts `/login` + `/reset-password`; logout unmounts pages so no per-user state survives. New-assessment flow now ends at the record's own URL. **Password reset**: forgot-password mode in Login → `resetPasswordForEmail` → `/reset-password` page (`updateUser`). **Account page**: change password/email (Supabase), Delete-my-data → new `DELETE /api/me` (removes assessments + users row; login stays — no admin key by design, Phase 7 revisits full deletion; 5 new tests, 56 total). **Sign-up polish**: friendly error mapping, resend-confirmation, password hint. Verified: pytest, ruff, eslint, prettier, build, live smoke test (all 5 SPA routes 200, `/api/me` 401 unauth, proxy OK). ⚠️ **Kat must do:** Supabase dashboard → Authentication → URL Configuration → add `http://localhost:5173/reset-password` to Redirect URLs, then run one real email round trip (reset + confirmation) in the browser. ⚠️ Gotcha hit: a stale backend on :8000 answered with old code — restart uvicorn after backend changes if not using `--reload`. |
 | 2026-07-19 | 0.3 | `.github/workflows/ci.yml`: backend job (Python 3.11, ruff check + format check, pytest against a `postgres:16` service container via `TEST_DATABASE_URL`) and frontend job (Node 22, npm ci, eslint, prettier check, vite build). Full suite verified locally against real Postgres (51 passed, db `ai_risk_test` — dedicated test db, never the dev one: tests drop_all between cases). Lockfile sync verified with `npm ci --dry-run`. Final "done when" (green checks) confirms on the first pushed PR. Phase 0 complete. |
 | 2026-07-19 | 0.2 | Ruff (backend: `ruff.toml`) + Prettier/ESLint (frontend: `.prettierrc.json`, `eslint.config.js`, npm scripts `lint` / `format` / `format:check`). Notable config choices: E501 ignored (formatter owns line length; `SYSTEM_PROMPT` must never be rewrapped — cache invariant), B008 exempted for FastAPI's `Depends`/`Header` idiom, ESLint pinned `^9` (eslint-plugin-react doesn't support v10 yet). `constraints-local.txt` holds the machine-only `cryptography<49` pin; README gained a Development section. All checks green: ruff, prettier, eslint (0 findings), pytest 51 passed, vite build OK. ⚠️ `npm audit`: pre-existing moderate advisory in vite 5's esbuild (dev-server only); fix is a breaking vite upgrade — deferred to Phase 7 (7.1/7.2 dependency work) or a dedicated small session. |

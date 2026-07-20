@@ -1,50 +1,40 @@
+// The list of past assessments.
+//
+// Search, filtering, sorting and pagination arrive in Phase 3.2 — this
+// deliberately stays a plain list until the backend gains the query params in
+// 3.1.
 import { Link } from "react-router-dom";
-import { LEVEL_CLASS } from "../constants.js";
+import AssessmentRow from "./AssessmentRow.jsx";
+import EmptyState from "./EmptyState.jsx";
+import Button from "./ui/Button.jsx";
+import { ArchiveIcon } from "./ui/icons.jsx";
 
-export default function AssessmentList({ assessments, error, onOpen }) {
-  if (error) {
-    return (
-      <div className="banner banner-error">
-        <strong>Could not load assessments.</strong> {error}
-      </div>
-    );
-  }
-
+export default function AssessmentList({ assessments }) {
   if (!assessments || assessments.length === 0) {
     return (
-      <div className="card empty">
-        <h2>No assessments yet</h2>
-        <p>
-          <Link to="/">Run your first assessment</Link> to see it saved here.
-        </p>
-      </div>
+      <EmptyState
+        icon={ArchiveIcon}
+        title="No assessments yet"
+        message="Screened use cases are saved to your account and listed here."
+        action={
+          <Link to="/new">
+            <Button>Run your first assessment</Button>
+          </Link>
+        }
+      />
     );
   }
 
   return (
-    <div className="list">
-      <h2 className="list-title">Past assessments</h2>
-      <ul className="list-rows">
-        {assessments.map((a) => {
-          const cls = LEVEL_CLASS[a.overall_risk_level] || "level-medium";
-          const date = a.created_at
-            ? new Date(a.created_at).toLocaleString()
-            : "";
-          return (
-            <li key={a.id}>
-              <button className="list-row" onClick={() => onOpen(a.id)}>
-                <span className="list-row-main">
-                  <span className="list-row-name">{a.project_name}</span>
-                  <span className="list-row-summary">{a.summary}</span>
-                </span>
-                <span className="list-row-meta">
-                  <span className={`badge ${cls}`}>{a.overall_risk_level}</span>
-                  <span className="list-row-date">{date}</span>
-                </span>
-              </button>
-            </li>
-          );
-        })}
+    <div>
+      <p className="mb-3 text-sm text-muted">
+        {assessments.length}{" "}
+        {assessments.length === 1 ? "assessment" : "assessments"}
+      </p>
+      <ul className="space-y-2.5">
+        {assessments.map((a) => (
+          <AssessmentRow key={a.id} assessment={a} />
+        ))}
       </ul>
     </div>
   );

@@ -13,6 +13,10 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext.jsx";
 import LoadingState from "../components/LoadingState.jsx";
+import Banner, { Code } from "../components/ui/Banner.jsx";
+import Button from "../components/ui/Button.jsx";
+import Card from "../components/ui/Card.jsx";
+import { Field, TextInput } from "../components/ui/Form.jsx";
 import { supabase, supabaseConfigured } from "../supabaseClient.js";
 
 export default function ResetPasswordPage() {
@@ -26,30 +30,34 @@ export default function ResetPasswordPage() {
 
   if (!supabaseConfigured) {
     return (
-      <div className="auth-card">
-        <h2>Reset password</h2>
-        <div className="banner banner-warning">
-          <strong>Authentication is not configured.</strong> Set{" "}
-          <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code>{" "}
-          in <code>frontend/.env</code> and restart the dev server.
-        </div>
-      </div>
+      <Card>
+        <h2 className="mb-3 text-xl font-semibold text-ink">Reset password</h2>
+        <Banner tone="warning" title="Authentication is not configured.">
+          Set <Code>VITE_SUPABASE_URL</Code> and{" "}
+          <Code>VITE_SUPABASE_ANON_KEY</Code> in <Code>frontend/.env</Code> and
+          restart the dev server.
+        </Banner>
+      </Card>
     );
   }
 
   if (!authReady) {
-    return <LoadingState title="Loading…" message="Checking your session." />;
+    return <LoadingState message="Checking your session." />;
   }
 
   if (!session) {
     return (
-      <div className="auth-card">
-        <h2>Reset password</h2>
-        <div className="banner banner-warning">
-          This reset link is invalid or has expired. You can request a new one
-          from the <Link to="/login">sign-in page</Link> via “Forgot password?”.
-        </div>
-      </div>
+      <Card>
+        <h2 className="mb-3 text-xl font-semibold text-ink">Reset password</h2>
+        <Banner tone="warning" title="This link is no longer valid.">
+          Reset links expire, and can only be used once. Request a new one from
+          the{" "}
+          <Link to="/login" className="font-semibold underline">
+            sign-in page
+          </Link>{" "}
+          via “Forgot password?”.
+        </Banner>
+      </Card>
     );
   }
 
@@ -72,37 +80,50 @@ export default function ResetPasswordPage() {
 
   if (done) {
     return (
-      <div className="auth-card">
-        <h2>Password updated</h2>
-        <p className="auth-sub">You are signed in with your new password.</p>
-        <button
-          className="btn-primary"
+      <Card>
+        <h2 className="text-xl font-semibold text-ink">Password updated</h2>
+        <p className="mt-1 text-sm text-muted">
+          You are signed in with your new password.
+        </p>
+        <Button
+          className="mt-5 w-full"
           onClick={() => navigate("/", { replace: true })}
         >
           Go to the app
-        </button>
-      </div>
+        </Button>
+      </Card>
     );
   }
 
   return (
-    <div className="auth-card">
-      <h2>Choose a new password</h2>
-      <p className="auth-sub">
+    <Card>
+      <h2 className="text-xl font-semibold text-ink">Choose a new password</h2>
+      <p className="mt-1 text-sm text-muted">
         Setting a new password for{" "}
-        <strong>{session.user?.email || "your account"}</strong>.
+        <strong className="text-ink">
+          {session.user?.email || "your account"}
+        </strong>
+        .
       </p>
 
       {error && (
-        <div className="banner banner-error">
-          <strong>Could not update the password.</strong> {error}
-        </div>
+        <Banner
+          tone="error"
+          title="Could not update the password."
+          className="mt-4"
+        >
+          {error}
+        </Banner>
       )}
 
-      <form className="auth-form" onSubmit={handleSubmit}>
-        <label>
-          New password
-          <input
+      <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+        <Field
+          label="New password"
+          htmlFor="new-password"
+          hint="At least 6 characters."
+        >
+          <TextInput
+            id="new-password"
             type="password"
             autoComplete="new-password"
             required
@@ -110,11 +131,10 @@ export default function ResetPasswordPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <span className="hint">At least 6 characters.</span>
-        </label>
-        <label>
-          Repeat new password
-          <input
+        </Field>
+        <Field label="Repeat new password" htmlFor="confirm-password">
+          <TextInput
+            id="confirm-password"
             type="password"
             autoComplete="new-password"
             required
@@ -122,11 +142,11 @@ export default function ResetPasswordPage() {
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
           />
-        </label>
-        <button type="submit" className="btn-primary" disabled={busy}>
+        </Field>
+        <Button type="submit" className="w-full" disabled={busy}>
           {busy ? "Working…" : "Set new password"}
-        </button>
+        </Button>
       </form>
-    </div>
+    </Card>
   );
 }
