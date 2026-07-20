@@ -70,6 +70,6 @@ class TestDeleteMyData:
 
         r = client.get("/api/assessments", headers=auth_headers(user_id))
         assert r.status_code == 200
-        assert r.json() == []
+        assert r.json()["items"] == []
         db_session.expire_all()
         assert db_session.get(User, user_id) is not None

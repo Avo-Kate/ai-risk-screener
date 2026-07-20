@@ -15,8 +15,19 @@ export default function AssessmentRow({ assessment }) {
         className="flex items-center justify-between gap-4 rounded-xl border border-line bg-surface p-4 shadow-card transition-colors hover:border-accent-line hover:bg-accent-soft/40"
       >
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-semibold text-ink">
-            {assessment.project_name}
+          <span className="flex items-center gap-2">
+            <span className="min-w-0 truncate font-semibold text-ink">
+              {assessment.project_name}
+            </span>
+            {/* Only worth showing once an assessment has actually been re-run. */}
+            {assessment.version_count > 1 && (
+              <span
+                className="shrink-0 rounded-full bg-sunken px-2 py-0.5 text-xs font-semibold text-muted"
+                title={`Version ${assessment.version} of ${assessment.version_count}`}
+              >
+                v{assessment.version}
+              </span>
+            )}
           </span>
           <span className="mt-0.5 line-clamp-2 block text-sm text-muted">
             {assessment.summary}

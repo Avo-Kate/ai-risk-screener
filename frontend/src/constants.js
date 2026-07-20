@@ -29,6 +29,24 @@ export const DATA_TYPES = [
 
 export const GEOGRAPHIC_SCOPES = ["EU", "US", "UK", "global"];
 
+// Ordered by severity, not alphabetically — the same order the backend sorts by
+// (see RISK_ORDER in main.py). Used for filter chips and chart axes.
+export const RISK_LEVELS = ["low", "medium", "high", "unacceptable"];
+
+// Sort options offered in the list view. `value` pairs a backend `sort` field
+// with an `order`, so the UI can present one flat dropdown.
+export const SORT_OPTIONS = [
+  { value: "created_at:desc", label: "Newest first" },
+  { value: "created_at:asc", label: "Oldest first" },
+  { value: "risk:desc", label: "Highest risk first" },
+  { value: "risk:asc", label: "Lowest risk first" },
+  { value: "project_name:asc", label: "Name A–Z" },
+  { value: "project_name:desc", label: "Name Z–A" },
+];
+
+export const DEFAULT_SORT = "created_at:desc";
+export const PAGE_SIZE = 20;
+
 // -----------------------------------------------------------------------------
 // Risk level presentation
 // -----------------------------------------------------------------------------

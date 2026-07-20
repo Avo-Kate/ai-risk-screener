@@ -11,6 +11,7 @@ import DashboardPage from "./pages/DashboardPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import NewAssessmentPage from "./pages/NewAssessmentPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
+import ReviseAssessmentPage from "./pages/ReviseAssessmentPage.jsx";
 
 export default function App() {
   return (
@@ -28,6 +29,10 @@ export default function App() {
             <Route path="/new" element={<NewAssessmentPage />} />
             <Route path="/assessments" element={<AssessmentsListPage />} />
             <Route path="/assessments/:id" element={<AssessmentDetailPage />} />
+            <Route
+              path="/assessments/:id/revise"
+              element={<ReviseAssessmentPage />}
+            />
             <Route path="/account" element={<AccountPage />} />
           </Route>
 

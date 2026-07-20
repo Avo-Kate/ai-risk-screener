@@ -27,6 +27,17 @@ export function RiskBadge({ level, label, size = "sm", className }) {
   );
 }
 
+/** A bare colour dot for a risk level — for chips, legends and dense lists. */
+export function RiskDot({ level, className }) {
+  const solid = RISK_SOLID[level] || RISK_SOLID[RISK_FALLBACK];
+  return (
+    <span
+      aria-hidden="true"
+      className={cx("inline-block h-2.5 w-2.5 rounded-full", solid, className)}
+    />
+  );
+}
+
 export function ApplicabilityBadge({ applicability, className }) {
   const tone =
     APPLICABILITY_BADGE[applicability] ||

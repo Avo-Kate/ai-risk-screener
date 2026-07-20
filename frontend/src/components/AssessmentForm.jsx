@@ -114,8 +114,14 @@ function DescriptionCounter({ value }) {
   );
 }
 
-export default function AssessmentForm({ onSubmit }) {
-  const [form, setForm] = useState(INITIAL);
+export default function AssessmentForm({
+  onSubmit,
+  // Pre-fills the form from a previous assessment's input, for "revise and
+  // re-run". Only read on mount — this form is never reset from outside.
+  initialValues,
+  submitLabel = "Run assessment",
+}) {
+  const [form, setForm] = useState(() => ({ ...INITIAL, ...initialValues }));
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const formRef = useRef(null);
@@ -358,7 +364,7 @@ export default function AssessmentForm({ onSubmit }) {
 
       <div className="flex flex-wrap items-center gap-4">
         <Button type="submit" size="lg">
-          Run assessment
+          {submitLabel}
         </Button>
         <p className="text-sm text-muted">Takes 10–60 seconds.</p>
       </div>

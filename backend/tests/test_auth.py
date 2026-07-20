@@ -13,7 +13,7 @@ class TestTokenValidation:
     def test_valid_token_is_accepted(self, client, auth_headers, user_id):
         r = client.get("/api/assessments", headers=auth_headers(user_id))
         assert r.status_code == 200
-        assert r.json() == []
+        assert r.json()["items"] == []
 
     def test_expired_token_is_401(self, client, auth_headers, user_id):
         r = client.get(

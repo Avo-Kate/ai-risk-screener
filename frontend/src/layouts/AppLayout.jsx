@@ -14,18 +14,19 @@ import TopBar from "./TopBar.jsx";
 
 // Page titles for the top bar. Matched longest-prefix-first so
 // /assessments/:id wins over /assessments.
+// Page titles for the top bar, matched in order — most specific first, since
+// several share a prefix (/assessments/:id/revise vs /assessments/:id).
 const TITLES = [
-  ["/assessments/", "Assessment"],
-  ["/assessments", "Past assessments"],
-  ["/account", "Account"],
-  ["/new", "New assessment"],
-  ["/", "Dashboard"],
+  [/^\/assessments\/[^/]+\/revise$/, "Revise assessment"],
+  [/^\/assessments\/[^/]+$/, "Assessment"],
+  [/^\/assessments$/, "Past assessments"],
+  [/^\/account$/, "Account"],
+  [/^\/new$/, "New assessment"],
+  [/^\/$/, "Dashboard"],
 ];
 
 function titleFor(pathname) {
-  const hit = TITLES.find(([prefix]) =>
-    prefix === "/" ? pathname === "/" : pathname.startsWith(prefix),
-  );
+  const hit = TITLES.find(([pattern]) => pattern.test(pathname));
   return hit ? hit[1] : "AI Risk Screener";
 }
 
