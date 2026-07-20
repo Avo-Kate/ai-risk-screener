@@ -23,6 +23,8 @@ import Button from "../components/ui/Button.jsx";
 import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
 import {
   ArchiveBoxIcon,
+  DownloadIcon,
+  PrinterIcon,
   RerunIcon,
   RestoreIcon,
   TrashIcon,
@@ -41,6 +43,7 @@ export default function AssessmentDetailPage() {
   const [error, setError] = useState(null);
   const [actionError, setActionError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -89,6 +92,20 @@ export default function AssessmentDetailPage() {
       setBusy(false);
     }
   }, [id, record]);
+
+  async function handleDownloadPdf() {
+    setDownloading(true);
+    setActionError(null);
+    try {
+      const { downloadAssessmentPdf } =
+        await import("../pdf/downloadAssessmentPdf.js");
+      await downloadAssessmentPdf(record);
+    } catch (e) {
+      setActionError(e);
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   async function handleDelete() {
     setBusy(true);
@@ -143,6 +160,23 @@ export default function AssessmentDetailPage() {
         record={record}
         actions={
           <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleDownloadPdf}
+              disabled={downloading}
+            >
+              <DownloadIcon className="h-4 w-4" />
+              {downloading ? "Preparing PDF…" : "Download PDF"}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => window.print()}
+            >
+              <PrinterIcon className="h-4 w-4" />
+              Print / Save as PDF
+            </Button>
             <Link to={`/assessments/${record.id}/revise`}>
               <Button variant="secondary" size="sm">
                 <RerunIcon className="h-4 w-4" />
@@ -181,7 +215,11 @@ export default function AssessmentDetailPage() {
         }
       />
 
-      <VersionHistory versions={versions} currentId={record.id} />
+      {/* Interactive navigation, not part of the paper document — the printed
+          header already states which version this is. */}
+      <div className="print:hidden">
+        <VersionHistory versions={versions} currentId={record.id} />
+      </div>
 
       <ConfirmDialog
         open={confirmingDelete}

@@ -96,6 +96,21 @@ export const RISK_HEX = {
   unacceptable: { bg: "#5b1a14", fg: "#ffffff", solid: "#7a241c" },
 };
 
+/**
+ * Neutral and accent hex values for the PDF, mirroring theme.css the same way
+ * RISK_HEX does. Change a token there, change it here.
+ */
+export const UI_HEX = {
+  ink: "#16202b",
+  inkSoft: "#3f4c5e",
+  muted: "#67748a",
+  line: "#e4e8ee",
+  lineStrong: "#ccd3dd",
+  sunken: "#f1f3f6",
+  accent: "#1f4e79",
+  accentSoft: "#e8eef7",
+};
+
 /** Fallback used when the model returns an unexpected level string. */
 export const RISK_FALLBACK = "medium";
 

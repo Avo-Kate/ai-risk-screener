@@ -123,3 +123,27 @@
     outline-offset: 2px;
   }
 }
+
+/* -----------------------------------------------------------------------------
+   Print (Phase 4.1) — the assessment result as a clean paper document.
+   Element-level differences live on the elements as `print:` utilities; only
+   the page-wide rules belong here.
+   -------------------------------------------------------------------------- */
+@page {
+  margin: 14mm;
+}
+
+@media print {
+  html {
+    /* Keep the small colour accents (risk badges, meters) even when the
+       browser's "background graphics" box is unchecked — they are meaning,
+       not decoration. Large tinted surfaces are neutralised per-element
+       with print: utilities instead. */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    background: #fff;
+  }
+}

@@ -83,14 +83,14 @@ export default function Sidebar({ open, onClose }) {
   return (
     <>
       {/* Fixed rail — desktop */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-line bg-surface lg:block">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-line bg-surface lg:block print:hidden">
         <SidebarContent />
       </aside>
 
       {/* Drawer — mobile / tablet */}
       <div
         className={cx(
-          "fixed inset-0 z-40 lg:hidden",
+          "fixed inset-0 z-40 lg:hidden print:hidden",
           open ? "pointer-events-auto" : "pointer-events-none",
         )}
         aria-hidden={!open}

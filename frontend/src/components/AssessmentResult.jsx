@@ -9,7 +9,8 @@
 // linear and page-break friendly: no side-by-side columns carrying meaning, and
 // nothing important hidden behind interaction that print cannot reveal
 // (frameworks that apply are expanded by default for exactly this reason).
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { RISK_BADGE, RISK_FALLBACK } from "../constants.js";
 import { formatDateTime } from "../format.js";
 import { ApplicabilityBadge, LevelMeter } from "./ui/Badge.jsx";
@@ -21,7 +22,14 @@ import { ChevronIcon } from "./ui/icons.jsx";
 function Verdict({ level, summary }) {
   const tone = RISK_BADGE[level] || RISK_BADGE[RISK_FALLBACK];
   return (
-    <section className={cx("rounded-xl border border-current/15 p-6", tone)}>
+    <section
+      className={cx(
+        // Print neutralises the tinted ground (an "unacceptable" verdict would
+        // otherwise be a page-wide slab of dark ink); the level word carries it.
+        "rounded-xl border border-current/15 p-6 print:break-inside-avoid print:border-line-strong print:bg-white print:text-ink",
+        tone,
+      )}
+    >
       <p className="text-xs font-semibold tracking-wide uppercase opacity-80">
         Overall risk level
       </p>
@@ -79,7 +87,7 @@ function FrameworkCard({ framework, open, onToggle }) {
             <ApplicabilityBadge applicability={framework.applicability} />
             <ChevronIcon
               className={cx(
-                "h-4 w-4 text-muted transition-transform",
+                "h-4 w-4 text-muted transition-transform print:hidden",
                 open && "rotate-180",
               )}
             />
@@ -167,7 +175,7 @@ function Recap({ input }) {
 
 function SectionTitle({ children, aside }) {
   return (
-    <div className="mb-3 flex items-baseline justify-between gap-4">
+    <div className="mb-3 flex items-baseline justify-between gap-4 print:break-after-avoid">
       <h3 className="text-lg font-semibold text-ink">{children}</h3>
       {aside}
     </div>
@@ -186,6 +194,30 @@ export default function AssessmentResult({ record, actions }) {
   const allOpen = openMap.every(Boolean);
   const setAll = (value) => setOpenMap(openMap.map(() => value));
 
+  // A closed <details> keeps its content out of the print snapshot and CSS
+  // cannot force it open, so expand everything for the print and restore after.
+  // flushSync because the browser snapshots the page as soon as beforeprint
+  // handlers return — a batched update would land too late.
+  const preprintOpenMap = useRef(null);
+  useEffect(() => {
+    const expandAll = () => {
+      // Guard against beforeprint firing twice before an afterprint — the
+      // second call must not overwrite the state we mean to restore.
+      if (preprintOpenMap.current === null) preprintOpenMap.current = openMap;
+      flushSync(() => setOpenMap(openMap.map(() => true)));
+    };
+    const restore = () => {
+      if (preprintOpenMap.current) setOpenMap(preprintOpenMap.current);
+      preprintOpenMap.current = null;
+    };
+    window.addEventListener("beforeprint", expandAll);
+    window.addEventListener("afterprint", restore);
+    return () => {
+      window.removeEventListener("beforeprint", expandAll);
+      window.removeEventListener("afterprint", restore);
+    };
+  }, [openMap]);
+
   return (
     <article className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -194,10 +226,11 @@ export default function AssessmentResult({ record, actions }) {
           {created_at && (
             <p className="mt-1 text-sm text-muted">
               Assessed {formatDateTime(created_at)}
+              {record.version != null && ` · Version ${record.version}`}
             </p>
           )}
         </div>
-        {actions && <div className="shrink-0">{actions}</div>}
+        {actions && <div className="shrink-0 print:hidden">{actions}</div>}
       </header>
 
       <Verdict level={result.overall_risk_level} summary={result.summary} />
@@ -209,7 +242,7 @@ export default function AssessmentResult({ record, actions }) {
             <button
               type="button"
               onClick={() => setAll(!allOpen)}
-              className="text-sm font-semibold text-accent hover:text-accent-hover"
+              className="text-sm font-semibold text-accent hover:text-accent-hover print:hidden"
             >
               {allOpen ? "Collapse all" : "Expand all"}
             </button>
@@ -258,6 +291,13 @@ export default function AssessmentResult({ record, actions }) {
           {result.disclaimer}
         </p>
       )}
+
+      {/* Print-only provenance line: a paper copy needs to say when it was
+          made, since it will outlive the screen state it came from. */}
+      <footer className="hidden border-t border-line pt-4 text-xs text-muted print:block">
+        Generated {formatDateTime(new Date().toISOString())} by AI Risk Screener
+        — automated decision-support, not legal advice.
+      </footer>
     </article>
   );
 }

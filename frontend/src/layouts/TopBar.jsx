@@ -91,7 +91,7 @@ function UserMenu({ email, onLogout }) {
 
 export default function TopBar({ title, email, onOpenNav, onLogout }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-line bg-surface/85 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-line bg-surface/85 backdrop-blur print:hidden">
       <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4 sm:px-6 lg:px-8">
         <button
           type="button"

@@ -128,6 +128,22 @@ export const RerunIcon = (p) => (
   </Icon>
 );
 
+export const PrinterIcon = (p) => (
+  <Icon {...p}>
+    <path d="M6 9V3.5h12V9" />
+    <path d="M6 17H4.5A1.5 1.5 0 0 1 3 15.5v-5A1.5 1.5 0 0 1 4.5 9h15a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5H18" />
+    <rect x="6" y="14" width="12" height="6.5" rx="1" />
+  </Icon>
+);
+
+export const DownloadIcon = (p) => (
+  <Icon {...p}>
+    <path d="M12 3v11" />
+    <path d="m7 9.5 5 5 5-5" />
+    <path d="M4 20.5h16" />
+  </Icon>
+);
+
 export const ArrowRightIcon = (p) => (
   <Icon {...p}>
     <path d="M5 12h14M13 6l6 6-6 6" />
